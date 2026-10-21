@@ -1,0 +1,6 @@
+{
+  "base_url": "http://127.0.0.1:15721/v1",
+  "protocol": "responses",
+  "auth_mode": "cc_switch",
+  "model": "SET_YOUR_MODEL"
+}

@@ -1,0 +1,40 @@
+{
+  "schema_version": "1.0",
+  "case_id": "T10",
+  "dimension": 2,
+  "convention": "F(k)=s*R*k+s*q; k_new=k+theta",
+  "group": {
+    "name": "C2",
+    "generators": [
+      "g"
+    ],
+    "relators": [
+      [
+        "g",
+        "g"
+      ]
+    ]
+  },
+  "operations": [
+    {
+      "name": "g",
+      "R": [
+        [
+          1,
+          0
+        ],
+        [
+          0,
+          1
+        ]
+      ],
+      "s": 0,
+      "q": [
+        "0",
+        "0"
+      ]
+    }
+  ],
+  "physical_scope": "toy_only",
+  "privacy": "public_toy"
+}

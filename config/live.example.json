@@ -1,0 +1,10 @@
+{
+  "base_url": "https://api.openai.com/v1",
+  "model": "SET_YOUR_MODEL",
+  "api_key_env": "SYMMETRYLAB_API_KEY",
+  "max_cases": 30,
+  "max_seconds": 180,
+  "max_model_calls": 6,
+  "max_total_tokens": 12000,
+  "max_output_tokens": 600
+}

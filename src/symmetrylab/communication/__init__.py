@@ -1,0 +1,1 @@
+"""SymmetryLab module boundary."""

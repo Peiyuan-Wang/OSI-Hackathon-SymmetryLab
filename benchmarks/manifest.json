@@ -1,0 +1,186 @@
+{
+  "schema_version": "1.0",
+  "description": "10 hand-derived golden + 20 constructive development; no held-out generalization claim",
+  "cases": [
+    {
+      "path": "golden/T01.json",
+      "expected": "gauge_trivial",
+      "split": "golden",
+      "label_source": "plan section 6, exact hand-derived"
+    },
+    {
+      "path": "golden/T02.json",
+      "expected": "gauge_nontrivial",
+      "split": "golden",
+      "label_source": "plan section 6, exact hand-derived"
+    },
+    {
+      "path": "golden/T03.json",
+      "expected": "relation_inconsistent",
+      "split": "golden",
+      "label_source": "plan section 6, exact hand-derived"
+    },
+    {
+      "path": "golden/T04.json",
+      "expected": "gauge_trivial",
+      "split": "golden",
+      "label_source": "plan section 6, exact hand-derived"
+    },
+    {
+      "path": "golden/T05.json",
+      "expected": "gauge_nontrivial",
+      "split": "golden",
+      "label_source": "plan section 6, exact hand-derived"
+    },
+    {
+      "path": "golden/T06.json",
+      "expected": "gauge_trivial",
+      "split": "golden",
+      "label_source": "plan section 6, exact hand-derived"
+    },
+    {
+      "path": "golden/T07.json",
+      "expected": "gauge_nontrivial",
+      "split": "golden",
+      "label_source": "plan section 6, exact hand-derived"
+    },
+    {
+      "path": "golden/T08.json",
+      "expected": "gauge_trivial",
+      "split": "golden",
+      "label_source": "plan section 6, exact hand-derived"
+    },
+    {
+      "path": "golden/T09.json",
+      "expected": "relation_inconsistent",
+      "split": "golden",
+      "label_source": "plan section 6, exact hand-derived"
+    },
+    {
+      "path": "golden/T10.json",
+      "expected": "invalid_input",
+      "split": "golden",
+      "label_source": "plan section 6, exact hand-derived"
+    },
+    {
+      "path": "dev/D01.json",
+      "expected": "gauge_trivial",
+      "split": "dev",
+      "label_source": "q=(R-I)theta, construction"
+    },
+    {
+      "path": "dev/D02.json",
+      "expected": "gauge_trivial",
+      "split": "dev",
+      "label_source": "q=(R-I)theta, construction"
+    },
+    {
+      "path": "dev/D03.json",
+      "expected": "gauge_trivial",
+      "split": "dev",
+      "label_source": "q=(R-I)theta, construction"
+    },
+    {
+      "path": "dev/D04.json",
+      "expected": "gauge_trivial",
+      "split": "dev",
+      "label_source": "q=(R-I)theta, construction"
+    },
+    {
+      "path": "dev/D05.json",
+      "expected": "gauge_trivial",
+      "split": "dev",
+      "label_source": "q=(R-I)theta, construction"
+    },
+    {
+      "path": "dev/D06.json",
+      "expected": "gauge_trivial",
+      "split": "dev",
+      "label_source": "q=(R-I)theta, construction"
+    },
+    {
+      "path": "dev/D07.json",
+      "expected": "gauge_trivial",
+      "split": "dev",
+      "label_source": "q=(R-I)theta, construction"
+    },
+    {
+      "path": "dev/D08.json",
+      "expected": "gauge_trivial",
+      "split": "dev",
+      "label_source": "q=(R-I)theta, construction"
+    },
+    {
+      "path": "dev/D09.json",
+      "expected": "gauge_trivial",
+      "split": "dev",
+      "label_source": "q=(R-I)theta, construction"
+    },
+    {
+      "path": "dev/D10.json",
+      "expected": "gauge_trivial",
+      "split": "dev",
+      "label_source": "q=(R-I)theta, construction"
+    },
+    {
+      "path": "dev/D11.json",
+      "expected": "gauge_trivial",
+      "split": "dev",
+      "label_source": "q=(R-I)theta, construction"
+    },
+    {
+      "path": "dev/D12.json",
+      "expected": "gauge_trivial",
+      "split": "dev",
+      "label_source": "q=(R-I)theta, construction"
+    },
+    {
+      "path": "dev/D13.json",
+      "expected": "gauge_trivial",
+      "split": "dev",
+      "label_source": "q=(R-I)theta, construction"
+    },
+    {
+      "path": "dev/D14.json",
+      "expected": "gauge_trivial",
+      "split": "dev",
+      "label_source": "q=(R-I)theta, construction"
+    },
+    {
+      "path": "dev/D15.json",
+      "expected": "gauge_trivial",
+      "split": "dev",
+      "label_source": "q=(R-I)theta, construction"
+    },
+    {
+      "path": "dev/D16.json",
+      "expected": "gauge_trivial",
+      "split": "dev",
+      "label_source": "q=(R-I)theta, construction"
+    },
+    {
+      "path": "dev/D17.json",
+      "expected": "gauge_trivial",
+      "split": "dev",
+      "label_source": "q=(R-I)theta, construction"
+    },
+    {
+      "path": "dev/D18.json",
+      "expected": "gauge_trivial",
+      "split": "dev",
+      "label_source": "q=(R-I)theta, construction"
+    },
+    {
+      "path": "dev/D19.json",
+      "expected": "gauge_trivial",
+      "split": "dev",
+      "label_source": "q=(R-I)theta, construction"
+    },
+    {
+      "path": "dev/D20.json",
+      "expected": "gauge_trivial",
+      "split": "dev",
+      "label_source": "q=(R-I)theta, construction"
+    }
+  ]
+}

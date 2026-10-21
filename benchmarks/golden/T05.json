@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0",
+  "case_id": "T05",
+  "dimension": 2,
+  "convention": "F(k)=s*R*k+s*q; k_new=k+theta",
+  "group": {
+    "name": "C2xC2",
+    "generators": [
+      "a",
+      "b"
+    ],
+    "relators": [
+      [
+        "a",
+        "a"
+      ],
+      [
+        "b",
+        "b"
+      ],
+      [
+        "a",
+        "b",
+        "a^-1",
+        "b^-1"
+      ]
+    ]
+  },
+  "operations": [
+    {
+      "name": "a",
+      "R": [
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "s": 1,
+      "q": [
+        "0",
+        "0"
+      ]
+    },
+    {
+      "name": "b",
+      "R": [
+        [
+          -1,
+          0
+        ],
+        [
+          0,
+          -1
+        ]
+      ],
+      "s": 1,
+      "q": [
+        "1/2",
+        "0"
+      ]
+    }
+  ],
+  "physical_scope": "toy_only",
+  "privacy": "public_toy"
+}

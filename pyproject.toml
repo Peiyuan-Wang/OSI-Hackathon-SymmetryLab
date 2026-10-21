@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "symmetrylab"
+version = "0.2.0"
+description = "Verifiable counterexample-driven research on torus affine symmetries"
+requires-python = ">=3.11"
+dependencies = ["sympy==1.14.0"]
+
+[project.optional-dependencies]
+dev = ["pytest==8.4.2"]
+
+[project.scripts]
+symmetrylab = "symmetrylab.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.setuptools.package-data]
+"symmetrylab.web" = ["static/*"]
