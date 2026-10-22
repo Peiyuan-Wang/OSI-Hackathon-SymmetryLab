@@ -48,8 +48,8 @@ class DiscoveryTools:
     def search_sources(self, kind, query):
         if self.state['mode']=='demo':
             return {'status':'offline','message':'Offline demonstrations never perform network searches. Use live research for public metadata retrieval.'}
-        if len(self.state['retrievals'])>=6:
-            return {'status':'retrieval_budget_exceeded','message':'Six public searches per run'}
+        if len(self.state['retrievals'])>=8:
+            return {'status':'retrieval_budget_exceeded','message':'Eight public searches per run'}
         record={'kind':kind,'query':bounded_text(query,'query',300)}
         self.state['retrievals'].append(record)
         try:
@@ -58,7 +58,7 @@ class DiscoveryTools:
             record.update(status='invalid_query', message=str(exc))
             return record
         try:
-            packet=search_public(kind,query,timeout=self.remaining())
+            packet=search_public(kind,query,timeout=self.remaining(),material=self.state['research_profile']['material'])
             self.remaining()
             ids=self.add_sources(packet)
             record.update({k:v for k,v in packet.items() if k!='records'})
@@ -110,7 +110,9 @@ class DiscoveryTools:
         self.state['calculations'].append(entry)
         return entry
 
-    def calculation_ids(self,ids):
+    def calculation_ids(self,ids,allow_empty=False):
+        if isinstance(ids,list) and not ids and allow_empty:
+            return []
         if not isinstance(ids,list) or not 1<=len(ids)<=12:
             raise ValueError('Reference at least one calculation or gauge certificate')
         available={c['calculation_id'] for c in self.state['calculations'] if c['certificate_verified']}
@@ -132,7 +134,7 @@ class DiscoveryTools:
 
     def design_experiment(self,hypothesis,method,source_ids,calculation_ids,steps,controls,predictions,falsifier,requirements):
         entry={'design_id':f'E{len(self.state["experiment_designs"])+1:03d}',
-               'source_ids':self.source_ids(source_ids),'calculation_ids':self.calculation_ids(calculation_ids),
+               'source_ids':self.source_ids(source_ids),'calculation_ids':self.calculation_ids(calculation_ids,allow_empty=True),
                'status':'conditional_design','physical_feasibility':'requires_sample_and_instrument_validation'}
         for name in ('hypothesis','method','falsifier'):
             entry[name]=bounded_text(locals()[name],name)

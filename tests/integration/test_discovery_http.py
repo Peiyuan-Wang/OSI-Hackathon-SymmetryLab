@@ -46,5 +46,10 @@ def test_two_workspaces_navigation_security_and_human_preference(tmp_path):
             assert 'Conditional exact' in r.read().decode()
         with request('/api/runs') as r:
             assert {x['track'] for x in json.load(r)}=={'theory','experiment'}
+        with pytest.raises(HTTPError):request('/api/runs/clear',{'track':'experiment'},dict(headers,**{'X-SymmetryLab-Token':'wrong'}))
+        with request('/api/runs/clear',{'track':'experiment'},headers) as r:assert json.load(r)['removed']==1
+        with request('/api/runs') as r:
+            assert {x['track'] for x in json.load(r)}=={'theory'}
+        assert not (tmp_path/'runs'/experiment).exists() and (tmp_path/'runs'/identifier).exists()
     finally:
         server.shutdown();server.server_close();thread.join()

@@ -62,7 +62,7 @@ def test_sources_and_taste_cannot_forge_references():
     assert tool.search_sources('literature','MnPt')['status']=='offline'
     assert not state['sources']
     packet=tool.load_material_context()
-    assert len(packet['source_ids'])==4
+    assert len(packet['source_ids'])==5
     assert packet['sample_assignment']=='unresolved'
     with pytest.raises(ValueError):tool.source_ids(['S999'])
     with pytest.raises(ValueError):tool.calculation_ids(['V999'])
@@ -109,7 +109,7 @@ def test_concatenated_actions_execute_only_first_and_reject_malformed_tail():
 def test_malformed_source_query_can_be_repaired_without_claiming_network_failure(monkeypatch):
     tool,state=workspace(); state['mode']='live'
     calls=[]
-    def fetch(kind,query,timeout):
+    def fetch(kind,query,timeout,material=''):
         calls.append(query)
         raise OSError('offline')
     monkeypatch.setattr('symmetrylab.tools.discovery.search_public',fetch)
@@ -118,3 +118,31 @@ def test_malformed_source_query_can_be_repaired_without_claiming_network_failure
     assert not calls
     result=tool.search_sources('structure_formula','MnPt')
     assert result['status']=='unavailable' and calls==['MnPt']
+
+
+ATOM_SAMPLE = """<?xml version="1.0" encoding="UTF-8"?><feed xmlns="http://www.w3.org/2005/Atom">
+<entry><id>http://arxiv.org/abs/2510.04184v1</id><published>2025-10-05T12:55:48Z</published>
+<title>Longitudinal transport spin polarization of spin degenerate antiferromagnets</title>
+<summary>We calculate the longitudinal spin conductivity of representative PT-AFMs, L10-MnPt and Mn2Au.</summary>
+<author><name>Meng Zhu</name></author></entry>
+<entry><id>http://arxiv.org/abs/2401.00001v2</id><title>Unrelated tunnel junction</title><summary>VSe2 barrier.</summary></entry></feed>"""
+
+
+def test_arxiv_search_and_arxiv_doi_routing():
+    from symmetrylab.tools.sources import source_url
+    seen=[]
+    def fetch(url,timeout):
+        seen.append(url); return {'atom':ATOM_SAMPLE}
+    r=search_public('arxiv','MnPt "spin polarization"',fetch=fetch,material='L10 MnPt')
+    assert 'export.arxiv.org' in seen[0] and 'all%3AMnPt+AND+all%3A%22spin+polarization%22' in seen[0]
+    assert r['records'][0]['record_id']=='arXiv:2510.04184' and r['records'][0]['url']=='https://arxiv.org/abs/2510.04184'
+    assert [x['mentions_material'] for x in r['records']]==[True,False] and r['relevant_records']==1
+    # arXiv DOIs are DataCite DOIs; Crossref returns 404 for them.
+    assert 'id_list=2510.04184' in source_url('doi','https://doi.org/10.48550/arXiv.2510.04184')
+    assert 'api.crossref.org' in source_url('doi','10.1103/PhysRevB.104.144403')
+
+
+def test_supporting_information_records_are_not_counted_as_papers():
+    rows=[{'DOI':'10.1021/acsami.9b02493.s001','type':'component','title':['SI']},{'DOI':'10.1103/x','title':['MnPt paper']}]
+    r=search_public('literature','MnPt TMR',fetch=lambda *a:{'message':{'items':rows}},material='L10 MnPt')
+    assert [x['record_id'] for x in r['records']]==['10.1103/x'] and r['records'][0]['mentions_material']

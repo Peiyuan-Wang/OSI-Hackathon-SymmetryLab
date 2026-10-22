@@ -96,3 +96,17 @@ def test_responses_sse_and_incomplete(monkeypatch):
     assert client.complete([],64)['content']=='OK'
     raw=b'event: response.incomplete\ndata: {"type":"response.incomplete"}\n\n'
     with pytest.raises(RuntimeError,match='did not complete'): client.complete([],64)
+
+
+def test_key_pasted_into_variable_field_is_rejected_without_echo():
+    import pytest
+    from symmetrylab.model.client import OpenAICompatibleClient
+    with pytest.raises(ValueError) as e:
+        OpenAICompatibleClient({"base_url": "https://api.example.test/v1", "model": "m", "auth_mode": "environment", "api_key_env": "sk-abc123-def"})
+    assert "NAME" in str(e.value) and "sk-abc" not in str(e.value)
+
+
+def test_server_explains_failures_with_hints():
+    from symmetrylab.web.server import explain
+    assert "export SYMMETRYLAB_API_KEY" in explain("API key environment variable is not set")
+    assert "/v1" in explain("model request failed (HTTP 404)")

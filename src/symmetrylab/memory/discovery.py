@@ -1,5 +1,6 @@
 """Read-only cross-run strategy recall, regenerated from checked calculations."""
 import json
+import re
 from time import monotonic
 from pathlib import Path
 from symmetrylab.verifier.orientation import check_orientation
@@ -7,7 +8,27 @@ from symmetrylab.verifier.certificate import verify_certificate
 from symmetrylab.verifier.counterexample import is_counterexample, PREDICATES
 
 
-def recall_lessons(root, track, mode, limit=4):
+STOP = set('the a an of for in on to and or with by is are be can does do what which whether how this that from as at into using under compare test find propose search'.split())
+
+
+def topic(text, material=''):
+    words = set(re.findall(r'[a-z0-9]{3,}|[\u4e00-\u9fff]', (text or '').lower()))
+    drop = set(re.findall(r'[a-z0-9]{3,}', (material or '').lower())) | {'l10'}
+    return words - STOP - drop
+
+
+def related(goal, material, previous):
+    """Recall only for the same material and an overlapping question, so one topic cannot steer another."""
+    if goal is None:
+        return True
+    old = previous.get('research_profile', {})
+    if (old.get('material') or '').strip().lower() != (material or '').strip().lower():
+        return False
+    a, b = topic(goal, material), topic(previous.get('goal', ''), material)
+    return bool(a and b) and len(a & b) / len(a | b) >= 0.3
+
+
+def recall_lessons(root, track, mode, limit=4, goal=None, material=''):
     lessons=[]
     deadline=monotonic()+3
     paths=sorted(Path(root).glob('*/result.json'),key=lambda p:p.stat().st_mtime,reverse=True)[:100]
@@ -18,6 +39,8 @@ def recall_lessons(root, track, mode, limit=4):
         try:
             state=json.loads(path.read_text())
             if state.get('research_profile',{}).get('track')!=track or state.get('mode')!=mode:
+                continue
+            if not related(goal, material, state):
                 continue
             cases = {c["case_id"]: c for c in state.get("candidates", [])}
             for claim in state.get("claim_checks", []):

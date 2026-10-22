@@ -2,6 +2,7 @@
 
 import json
 import os
+import re
 from urllib.parse import urlsplit
 from urllib.request import Request, build_opener, HTTPRedirectHandler, ProxyHandler
 from urllib.error import HTTPError, URLError
@@ -34,7 +35,10 @@ class OpenAICompatibleClient:
         if not isinstance(self.model, str) or not self.model.strip() or self.model == "SET_YOUR_MODEL" or len(self.model) > 200:
             raise ValueError("configure a real model identifier before live mode")
         # This is only a placeholder: CC Switch injects its configured upstream key.
-        self.key = "PROXY_MANAGED" if self.auth_mode == "cc_switch" else os.environ.get(config.get("api_key_env", "SYMMETRYLAB_API_KEY"))
+        env_name = config.get("api_key_env", "SYMMETRYLAB_API_KEY")
+        if self.auth_mode == "environment" and not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,99}", env_name or ""):
+            raise ValueError("the API-key field expects an environment variable NAME such as SYMMETRYLAB_API_KEY, not the key itself")
+        self.key = "PROXY_MANAGED" if self.auth_mode == "cc_switch" else os.environ.get(env_name)
         if not self.key:
             raise ValueError("API key environment variable is not set")
         self.timeout = timeout

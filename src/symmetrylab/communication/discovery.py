@@ -23,8 +23,14 @@ GLOSSARY = [
 ]
 
 
+def compact(direction):
+    parts = [str(x) for x in direction]
+    sep = '' if all(len(x.lstrip('-')) == 1 for x in parts) else ','
+    return '[' + sep.join(parts) + ']'
+
+
 def axis(direction):
-    return AXIS_NAMES.get(str(direction), str(direction))
+    return AXIS_NAMES.get(str(direction), compact(direction))
 
 
 def rotation_name(rotations):
@@ -90,7 +96,11 @@ def gauge_rows(state):
 def key_findings(state):
     out = []
     if state.get('recalled_lessons'):
-        out.append(f"Memory: {len(state['recalled_lessons'])} independently rechecked lesson(s) from earlier runs were loaded and changed this run's plan (see Activity).")
+        n = len(state['recalled_lessons'])
+        out.append(f"Memory: {n} rechecked lesson(s) from earlier runs were "
+                   + ("used and changed this run's plan (see Activity)." if state['mode'] == 'demo' else "given to the model as scope-limited hints."))
+    if state.get('exact_kernel_applicable') is False:
+        out.append('No implemented exact kernel addresses this question; the conclusions below rest on sources and model reasoning and remain unverified.')
     for c in state['calculations']:
         if c['certificate_verified']:
             out.append(calc_finding(c))
@@ -112,9 +122,11 @@ def key_findings(state):
 def open_questions(state):
     p = state['research_profile']
     out = []
+    kernels = {c['result']['kernel'] for c in state['calculations']}
     if p['track'] == 'experiment':
-        out += ['Sample magnetic structure, propagation vector and domain populations are not established.',
-                'No calibrated intensity, accessible hkl, XMLD spectrum, energy stability or experimental feasibility has been established.']
+        out.append('The sample magnetic structure, domains and device conditions are not established.')
+        if 'collinear_neutron_orientation_v1' in kernels:
+            out.append('No calibrated intensity, accessible hkl, XMLD spectrum, energy stability or experimental feasibility has been established.')
     else:
         out += ['Two finite examples do not classify all actions or establish a physical realization.',
                 'Novelty and relevance of the proposed directions need expert review.']
@@ -136,7 +148,7 @@ def calc_section(c, audience):
     else:
         probes = r['inputs']['probes']
         lines += [f"`{r['formula']}`" if audience == 'researcher' else 'Values: 0 = invisible to this probe, 1 = maximal.', '',
-                  '| Candidate | ' + ' | '.join('Q=' + axis(q).split(' ')[0] for q in probes) + ' |', '|---|' + '---|' * len(probes)]
+                  '| Candidate | ' + ' | '.join('Q=' + axis(q).split(' (')[0] for q in probes) + ' |', '|---|' + '---|' * len(probes)]
         lines += ['| ' + candidate_name(r, label) + ' | ' + ' | '.join(row) + ' |' for label, row in zip(r['labels'], r['factors'])]
     lines.append('')
     if audience == 'researcher':
@@ -152,18 +164,23 @@ def render_discovery(state, audience):
     full, student = audience == 'researcher', audience == 'student'
     lines = ['# SymmetryLab — ' + ('Experimental research' if experiment else 'Theory exploration'), '',
              f"Run `{state['run_id'][:12]}` · {'offline demonstration' if state['mode'] == 'demo' else 'live model'} · {state['status'].replace('_', ' ')}", '']
+    if state.get('style_profile'):
+        sp = state['style_profile']
+        lines += [f"Researcher voice profile `{sp['hash']}` " + ('applied to model prose (wording only; evidence rules unchanged).' if sp['applied'] else 'selected, but offline walkthroughs use fixed text.'), '']
     if state['mode'] == 'demo':
         lines += ['> **Scripted offline walkthrough.** No live model or network search was used in this run; the calculations are real.', '']
+    if state.get('summary'):
+        lines += ['## Answer — unverified model synthesis', '', state['summary'], '']
     lines += ['## Key findings', '']
     findings = key_findings(state)
     lines += ['- ' + x for x in findings] if findings else ['- No independently checked result was produced in this run.']
-    if state.get('summary'):
-        lines += ['', '**Synthesis (unverified model text):** ' + state['summary']]
     lines += ['', '## Still open', ''] + ['- ' + x for x in open_questions(state)] + ['']
     if audience == 'general':
         lines += ['## What this means', '',
-                  ('The tool compared possible magnetic orientations using exact arithmetic and found which measurements could tell them apart. '
-                   'It does not tell you what your sample actually does — that still requires the experiment described below.') if experiment else
+                  (('The tool compared possible magnetic orientations using exact arithmetic and found which measurements could tell them apart. '
+                    'It does not tell you what your sample actually does — that still requires the experiment described below.') if state['calculations'] else
+                   ('The answer above is a reasoned reading of the sources found, not a calculation. '
+                    'Whether a real device shows the effect still requires the experiment described below.')) if experiment else
                   ('The tool tested a mathematical claim on small, exactly solvable examples and found where it fails. '
                    'These are toy models: they sharpen the question but are not a physical discovery.'), '']
     if student:
@@ -173,11 +190,16 @@ def render_discovery(state, audience):
         lines += [f"Material: {p['material'] or 'not supplied'} · Conditions: {p['conditions'] or 'not supplied'} · Instruments: {p['instruments'] or 'not supplied'}", '']
     if state['sources'] or state['retrievals']:
         lines += ['## Sources', '']
-        for s in state['sources']:
+        shown = [x for x in state['sources'] if x.get('mentions_material') is not False]
+        other = [x for x in state['sources'] if x.get('mentions_material') is False]
+        for s in shown:
             title = s['fields'].get('title', s['record_id'])
             if isinstance(title, list):
                 title = '; '.join(title)
             lines.append(f"- {s['source_id']}: [{title}]({s['url']})" + (f" — {s['scope']}" if full else ''))
+        if other:
+            lines.append(f"- {len(other)} further retrieved record(s) do not mention {p['material'] or 'the material'} in title or abstract"
+                         + (': ' + ', '.join(x['source_id'] for x in other) if full else '') + '.')
         lines += [f"- Search `{r['kind']}` / {r['query']}: {r.get('status', 'pending')}" for r in state['retrievals'] if full or r.get('status') != 'retrieved']
         lines.append('')
     if state['structure_assessments'] and audience != 'general':

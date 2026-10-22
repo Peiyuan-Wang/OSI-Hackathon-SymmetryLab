@@ -1,4 +1,7 @@
-"""Public L10 MnPt starting references, reviewed 2026-10-22."""
+"""Public L10 MnPt starting references (Neel axis and spin transport), reviewed 2026-10-22.
+
+A starting packet only; live runs must still search journals and arXiv for the actual question.
+"""
 from copy import deepcopy
 
 PACKET = [
@@ -21,7 +24,12 @@ PACKET = [
      'url':'https://arxiv.org/abs/1903.00413',
      'fields':{'title':'Strain control of the Neel vector in Mn-based antiferromagnets',
                'note':'First-principles work studies strain-induced reorientation. Treat strain and relaxation as sample conditions, not a known measurement.'},
-     'scope':'Abstract-level theoretical context'}]
+     'scope':'Abstract-level theoretical context'},
+    {'provider':'Curated primary source','record_id':'10.48550/arXiv.2510.04184',
+     'url':'https://arxiv.org/abs/2510.04184',
+     'fields':{'title':'Longitudinal transport spin polarization of spin degenerate antiferromagnets',
+               'note':'Magnetic-point-group analysis and DFT: PT-symmetric (spin-degenerate) antiferromagnets such as L10-MnPt can still carry longitudinal spin currents through spin-orbit coupling, with spin conductivity comparable to PT-broken antiferromagnets. Relevant to whether MnPt can supply the spin polarization that TMR requires; it does not report a measured MnPt junction TMR.'},
+     'scope':'arXiv preprint (2025), abstract level; theoretical spin conductivity, not a tunnel-junction measurement'}]
 
 
 def mnpt_packet():
