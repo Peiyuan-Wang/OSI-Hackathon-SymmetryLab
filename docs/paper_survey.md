@@ -2,6 +2,8 @@
 
 Open **http://127.0.0.1:8787/papers**. Enter interest keywords and your own papers (arXiv ID, DOI or exact title), then **Find papers**. Vote ▲/▼ to re-rank instantly; **Build from my papers & likes** creates the voice profile; tick **Use in live model runs** and, on the theory/experiment page, **Write in my research voice**.
 
+Paper survey uses a warm plum palette, with purple navigation, controls, scores and focus indicators. Theory retains its green palette and experimental research its blue palette. The layout and paper-ranking behavior are unchanged. Desktop builds must be rebuilt to include the new stylesheet.
+
 ## Retrieval
 
 Source: arXiv API only (`export.arxiv.org`), restricted by default to `cond-mat*`, `quant-ph`, `physics*`, `hep-th`, `math-ph`. One query per keyword plus up to four distinctive phrases from your own abstracts; 25 results each, requests spaced 3 s apart. Your papers are resolved by arXiv ID, Crossref DOI (arXiv DOIs go to arXiv), or exact-title match (Jaccard ≥ 0.6, otherwise reported as unresolved). At most 200 candidates are kept; voted papers are never dropped.

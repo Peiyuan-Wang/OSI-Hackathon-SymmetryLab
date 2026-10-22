@@ -30,3 +30,39 @@
 .connection-page .composer-bottom{justify-content:space-between}
 .storage-note{margin:0 24px 24px}
 .connection-page .connection-test{margin:10px 24px 0;font-size:11px;color:#6c7d68}#side-status{white-space:pre-line}
+
+/* Paper survey: warm plum palette, distinct from theory green and experiment blue. */
+.papers{--ink:#41334a;--muted:#807386;--green:#76527c;--paper:#f7f3f7;--white:#fffafd;--accent:#ebd5e9;--line:#e7dce8}
+.papers .sidebar,.papers .brandmark span{background:#3c2944}
+.papers .brand small,.papers .workspace-label,.papers .sidebar-section,.papers .sidebar-footer small{color:#c4acc9}
+.papers .brandmark{border-color:#c5a9cd}.papers .nav{color:#e0cfe3}
+.papers .nav.active,.papers .nav:hover{background:#624469;color:#fff2fc}
+.papers .sidebar-footer{border-color:#72567a}.papers .status-dot{background:#e0b9d5}
+.papers h1 em,.papers summary,.papers .link-button,.papers .download{color:#85558a}
+.papers .metrics{background:#efe5f0;border-color:var(--line)}
+.papers .metrics>div+div{border-color:var(--line)}
+.papers .metrics span,.papers .metrics small,.papers .number,.papers .empty,.papers .empty h3,.papers .paper .why,.papers .candidate p,.papers .candidate small{color:#806b86}
+.papers .composer textarea{background:#fdf8fc;border-color:var(--line);color:var(--ink)}
+.papers .primary:hover{background:#5f3c67}.papers .secondary:hover{background:#f0e4f0}
+.papers .candidate{border-color:var(--line)}.papers .paper .score,.papers .badge{background:#efdfed;color:#754e7e}
+.papers .votes button.on{background:#76527c;border-color:#76527c}
+.papers .candidate.emerging{border-color:#c39562;background:#fff7ee}
+.papers input:focus,.papers textarea:focus,.papers select:focus{outline-color:#b88bb9}
+.papers button:focus-visible,.papers a:focus-visible,.papers summary:focus-visible{outline-color:#b88bb9}
+
+/* Connection settings: warm copper palette for the fourth workspace. */
+.connection-page{--ink:#49382e;--muted:#85766c;--green:#995432;--paper:#f8f4ee;--white:#fffdf8;--accent:#f1dbc4;--line:#e8ddd0}
+.connection-page .sidebar,.connection-page .brandmark span{background:#493326}
+.connection-page .brand small,.connection-page .workspace-label,.connection-page .sidebar-section,.connection-page .sidebar-footer small{color:#d2b79f}
+.connection-page .brandmark{border-color:#d4b28e}.connection-page .nav{color:#ecd8c4}
+.connection-page .nav.active,.connection-page .nav:hover{background:#775035;color:#fff5e7}
+.connection-page .sidebar-footer{border-color:#806249}.connection-page .status-dot{background:#e7bb78}
+.connection-page .history p{color:#dec5ad}
+.connection-page .breadcrumb,.connection-page .settings-grid label,.connection-page .mode-note,.connection-page .connection-test{color:#80634e}
+.connection-page .number{color:#a1866c}.connection-page h1 em{color:#a9633c}
+.connection-page .settings-grid input,.connection-page .settings-grid select{background:#fffbf5;border-color:var(--line);color:var(--ink)}
+.connection-page .primary:hover{background:#7c4025}.connection-page .secondary{border-color:var(--line)}
+.connection-page .secondary:hover{background:#f1e4d4}
+.connection-page .markdown code{background:#f1e7d9}
+.connection-page input:focus,.connection-page select:focus{outline-color:#c48c5e}
+.connection-page button:focus-visible,.connection-page a:focus-visible{outline-color:#c48c5e}

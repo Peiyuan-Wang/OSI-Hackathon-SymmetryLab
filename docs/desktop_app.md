@@ -62,3 +62,7 @@ The workflow runs regression checks and launches each frozen executable with an 
 calculation and experiment design. It does not certify native window rendering on every machine.
 Artifacts include SHA256 files and are retained for 30 days. Full model weights are downloaded
 on request and are not included in either archive.
+
+## Workspace colors
+
+Theory uses green, experimental research blue, Paper survey warm plum, and Connection settings warm copper. Each palette applies to the navigation and primary controls as well as the page background. Rebuild the desktop package after stylesheet changes; an older installed app keeps its bundled stylesheet.
