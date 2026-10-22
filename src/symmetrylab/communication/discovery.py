@@ -93,8 +93,54 @@ def gauge_rows(state):
     return rows
 
 
+def vec(values):
+    return '(' + ', '.join(str(x) for x in values) + ')'
+
+
+def ssg_finding(r):
+    head = f"{r['calculation_id']} · {r['record_id']}: "
+    if r['operation'] == 'verify_group':
+        if r['status'] == 'verified':
+            return head + f"stored graded reciprocal group re-verified exactly (order {r['order']}, closure from generators matches)."
+        return head + f"group check {r['status']}" + (f" — {r['reason']}" if r.get('reason') else '') + '.'
+    if r['operation'] == 'momentum_orbit' and r['status'] == 'computed':
+        n_stab = len(r.get('stabilizers', []))
+        return head + f"momentum k = {vec(r['k'])} has an orbit of {r['orbit_size']} momenta; stabilizer of {n_stab} element(s)."
+    return head + f"{r['operation'].replace('_', ' ')} {r['status']}."
+
+
+def ssg_section(calculations, audience):
+    lines = ['## SSG catalog calculations', '',
+             'Exact rational arithmetic on the stored graded reciprocal quotient (k → R̃k + κ, antiunitary sign already in R̃). '
+             'Results apply to the stored basis and parameter choice, not to a material assignment.', '',
+             '| ID | Record | Calculation | Result |', '|---|---|---|---|']
+    for r in calculations:
+        if r['operation'] == 'verify_group':
+            result = f"{r['status']}, order {r.get('order', '—')}"
+            what = 'group closure check'
+        else:
+            result = f"orbit {r.get('orbit_size', '—')}, stabilizer {len(r.get('stabilizers', []))}" if r['status'] == 'computed' else r['status']
+            what = f"orbit of k = {vec(r.get('k', []))}"
+        lines.append(f"| {r['calculation_id']} | {r['record_id']} | {what} | {result} |")
+    lines.append('')
+    if audience == 'researcher':
+        for r in calculations:
+            if r['operation'] == 'momentum_orbit' and r['status'] == 'computed':
+                lines.append(f"- {r['calculation_id']} orbit: " + ', '.join(vec(o) for o in r['orbit'])
+                             + '; stabilizer element indices ' + ', '.join(str(x['element_index']) + ('′' if x['grading'] else '') for x in r['stabilizers']) + '.')
+            elif r['operation'] == 'verify_group':
+                lines.append(f"- {r['calculation_id']} checks: " + '; '.join(r.get('checks', [])) + f" ({r.get('products_checked', 0)} products).")
+        cat = calculations[0].get('catalog', {})
+        lines += ['', f"Catalog: {cat.get('database_name', 'SSG catalog')} {cat.get('database_version', '')} (schema {cat.get('schema_version', '?')}); "
+                  f"record hashes: " + ', '.join(f"{r['record_id']} `{r.get('record_hash', '')[:12]}`" for r in calculations[:1]) + '. '
+                  'Full results are in the evidence JSON.', '']
+    return lines
+
+
 def key_findings(state):
     out = []
+    for result in state.get('skill_calculations', []):
+        out.append(ssg_finding(result))
     if state.get('recalled_lessons'):
         n = len(state['recalled_lessons'])
         out.append(f"Memory: {n} rechecked lesson(s) from earlier runs were "
@@ -128,7 +174,7 @@ def open_questions(state):
         if 'collinear_neutron_orientation_v1' in kernels:
             out.append('No calibrated intensity, accessible hkl, XMLD spectrum, energy stability or experimental feasibility has been established.')
     else:
-        out += ['Two finite examples do not classify all actions or establish a physical realization.',
+        out += ['Finite checks apply to the selected inputs and do not establish a physical realization.',
                 'Novelty and relevance of the proposed directions need expert review.']
     for c in state['calculations']:
         if c['result']['kernel'] == 'collinear_neutron_orientation_v1' and any(
@@ -166,7 +212,11 @@ def render_discovery(state, audience):
              f"Run `{state['run_id'][:12]}` · {'offline demonstration' if state['mode'] == 'demo' else 'live model'} · {state['status'].replace('_', ' ')}", '']
     if state.get('style_profile'):
         sp = state['style_profile']
-        lines += [f"Researcher voice profile `{sp['hash']}` " + ('applied to model prose (wording only; evidence rules unchanged).' if sp['applied'] else 'selected, but offline walkthroughs use fixed text.'), '']
+        lines += [f"Researcher voice profile `{sp['hash']}` " + ('applied in a separate writing pass; prose remains unverified.' if sp['applied'] else 'selected but not applied; original wording retained.'), '']
+    if state.get('interest_context'):
+        lines += [f"Interest profile `{state['interest_context'].get('hash', 'unversioned')}` supplied to research planning; historical topics remain inferred preferences.", '']
+    if state.get('writing_audit'):
+        lines += ['Writing pass: ' + state['writing_audit']['status'] + '. Structural checks do not certify semantic faithfulness.', '']
     if state['mode'] == 'demo':
         lines += ['> **Scripted offline walkthrough.** No live model or network search was used in this run; the calculations are real.', '']
     if state.get('summary'):
@@ -177,6 +227,7 @@ def render_discovery(state, audience):
     lines += ['', '## Still open', ''] + ['- ' + x for x in open_questions(state)] + ['']
     if audience == 'general':
         lines += ['## What this means', '',
+                  ('The SSG skill computed results from stored symmetry operations. These apply to the specified reciprocal group and do not establish a material assignment.') if state.get('skill_calculations') else
                   (('The tool compared possible magnetic orientations using exact arithmetic and found which measurements could tell them apart. '
                     'It does not tell you what your sample actually does — that still requires the experiment described below.') if state['calculations'] else
                    ('The answer above is a reasoned reading of the sources found, not a calculation. '
@@ -196,7 +247,8 @@ def render_discovery(state, audience):
             title = s['fields'].get('title', s['record_id'])
             if isinstance(title, list):
                 title = '; '.join(title)
-            lines.append(f"- {s['source_id']}: [{title}]({s['url']})" + (f" — {s['scope']}" if full else ''))
+            reference = f"{title} (local SSG catalog)" if s.get('kind') == 'ssg_database' else f"[{title}]({s['url']})"
+            lines.append(f"- {s['source_id']}: {reference}" + (f" — {s['scope']}" if full else ''))
         if other:
             lines.append(f"- {len(other)} further retrieved record(s) do not mention {p['material'] or 'the material'} in title or abstract"
                          + (': ' + ', '.join(x['source_id'] for x in other) if full else '') + '.')
@@ -213,6 +265,8 @@ def render_discovery(state, audience):
             lines.append(f"- **{h['id']}:** {h['statement']}" + (' Assumptions: ' + '; '.join(h['assumptions']) + '.' if full else ''))
         lines.append('')
     rows = gauge_rows(state)
+    if state.get('skill_calculations') and audience != 'general':
+        lines += ssg_section(state['skill_calculations'], audience)
     if state['calculations'] or rows:
         lines += ['## Conditional exact calculations', '']
         if audience == 'general':

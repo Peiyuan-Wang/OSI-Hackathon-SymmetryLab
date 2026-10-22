@@ -31,3 +31,4 @@ testpaths = ["tests"]
 
 [tool.setuptools.package-data]
 "symmetrylab.web" = ["static/*"]
+"symmetrylab.skills" = ["ssg-database/*.md"]

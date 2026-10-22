@@ -20,7 +20,7 @@ Build locally on macOS:
 scripts/build_mac_app.sh && open dist/SymmetryLab.app
 ```
 
-Installs all dependencies into `.venv`, runs the tests and builds a native app with the same layout. Add `--lite` to leave out PyTorch/PhysBERT. Details: [Desktop app](docs/desktop_app.md).
+Installs all dependencies into `.venv`, runs the tests and builds a native app with the same layout, including the SSG catalog (hash-checked against `data/ssg/manifest.json`; the build stops if it is missing). The finished app is smoke-tested. Add `--lite` to leave out PyTorch/PhysBERT, `--no-ssg` to leave out the catalog. Details: [Desktop app](docs/desktop_app.md).
 
 ## Installation
 
@@ -49,6 +49,10 @@ What the two offline walkthroughs show:
 - **Run it twice:** the second run recalls the rechecked lesson from the first; the theory run no longer re-proposes the refuted claim and the experiment run skips the degenerate c-only probe (one fewer tool call). This is a scripted demonstration of the memory mechanism, not a measured improvement.
 
 The workbench displays the plan, each tool call with its purpose, exact certificates and recalled lessons. Every report starts with **Key findings** derived from checked records. Switch the audience (Researcher: full tables and controls; Physics student: concepts explained; General reader: short summary) or download Markdown and evidence JSON. Completed runs remain in local history. **Stop run** requests cooperative cancellation; an in-flight model request may take up to its network timeout to return. Keep the terminal running; Ctrl+C stops the server.
+
+### SSG catalog
+
+Ask a question that mentions spin space groups / SSG. Offline, a scripted walkthrough searches the catalog for groups over P3 (No. 143), re-verifies N143.10.1 exactly and compares a generic momentum orbit with the K-point orbit. In live mode the model uses `list_skills` / `read_skill` / `call_skill` itself. Source checkouts read `data/ssg/SSGReciprocalOffline-0.1.5.sqlite`; the desktop app carries its own copy.
 
 ### Paper survey
 
@@ -149,4 +153,4 @@ tests/integration/         Full loop, replay, budgets, and mocked models
 
 Developers should start with [AGENTS.md](AGENTS.md). The [implementation plan](docs/implementation_plan.md), [architecture](docs/architecture.md), [experiment protocol](docs/experiments.md), and [privacy rules](docs/privacy.md) describe the intended scope and roadmap.
 
-All public cases are newly constructed abstract toys. Private papers, SSG databases, and Mathematica research code have not been connected. Project-authored documentation, prompts, CLI text, and newly generated reports use English.
+The gauge benchmark cases are newly constructed abstract toys. The SSG Reciprocal Offline catalog 0.1.5 (67,475 records) is connected read-only as a model skill and bundled into the desktop app; it is a local, authorized asset kept out of Git (see [SSG skill](docs/ssg_skill.md)). Private papers and Mathematica code are not connected, and the Wolfram paclet is not executed. Project-authored documentation, prompts, CLI text, and newly generated reports use English.

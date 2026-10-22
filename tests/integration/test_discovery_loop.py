@@ -133,17 +133,28 @@ def test_design_without_applicable_kernel_completes_honestly(tmp_path):
     assert report.index('Answer: possible') < report.index('## Key findings')
 
 
-def test_voice_profile_is_a_separate_system_message_in_live_runs(tmp_path):
+def test_voice_profile_only_applies_after_research_and_preserves_evidence(tmp_path):
     seen = []
     class Capture(DiscoveryDemo):
         def complete(self, messages, max_tokens):
-            seen.append([m for m in messages if m['role'] == 'system'])
+            seen.append(messages)
+            packet = json.loads(messages[-1]['content'])
+            if 'claim_ledger' in packet:
+                return {'content': json.dumps({'summary': packet['original_summary'],
+                                               'claim_ids': [c['id'] for c in packet['claim_ledger']]}), 'usage': {'total_tokens': 15}}
             return super().complete(messages, max_tokens)
     style = 'RESEARCHER VOICE PROFILE — governs wording and emphasis only.\nPreferred terminology: spin space group.'
-    r = run_agent('Explore spin groups', tmp_path / 'voice', mode='live', client=Capture(),
+    r = run_agent('Explore gauge mechanisms', tmp_path / 'voice', mode='live', client=Capture(),
                   config={'style_prompt': style, 'style_hash': 'abc123', 'research_profile': {'track': 'theory', 'keywords': 'spin groups'}})
-    assert all(len(s) == 2 and s[1]['content'] == style and 'VOICE' not in s[0]['content'] for s in seen)
+    assert all(len([m for m in messages if m['role'] == 'system']) == 1 for messages in seen)
+    assert all(style not in str(messages) for messages in seen[:-1])
+    assert json.loads(seen[-1][-1]['content'])['wording_profile'] == style
+    assert r['writing_audit']['status'] == 'applied'
+    assert r['original_model_summary'] == r['summary']
     assert r['style_profile'] == {'hash': 'abc123', 'applied': True}
     assert 'Researcher voice profile `abc123` applied' in render_agent_report(r, 'researcher')
-    plain = run_agent('Explore spin groups', tmp_path / 'plain', mode='live', client=DiscoveryDemo(), config={'research_profile': {'track': 'theory'}})
+    plain = run_agent('Explore gauge mechanisms', tmp_path / 'plain', mode='live', client=DiscoveryDemo(), config={'research_profile': {'track': 'theory'}})
     assert plain['style_profile'] is None
+    ledger = json.loads(seen[-1][-1]['content'])['claim_ledger']
+    assert [c['result'] for c in ledger] == [e['result'] for e in r['evidence'] if e['certificate_verified']]
+    assert [e['result']['certificate'] for e in r['evidence']] == [e['result']['certificate'] for e in plain['evidence']]

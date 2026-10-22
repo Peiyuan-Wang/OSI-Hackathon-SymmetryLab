@@ -27,12 +27,22 @@ def test_paper_survey_page_api_and_style_gate(tmp_path):
         assert v['candidate_count'] == 5 and v['ranked']
         v = json.load(request('/api/literature/vote', {'paper_id': v['ranked'][0]['id'], 'vote': 'up'}, h))
         assert v['votes']['up'] == 1
+        chosen = v['ranked'][0]['id']
+        v = json.load(request('/api/literature/style-vote', {'paper_id': chosen, 'selected': True}, h))
+        assert next(p for p in v['ranked'] if p['id'] == chosen)['style_selected']
+        v = json.load(request('/api/literature/writing', {'section':'derivation', 'audience':'student'}, h))
+        assert v['writing']['section'] == 'derivation'
         # A live run that asks for the voice profile is refused until one is built and enabled.
         with pytest.raises(HTTPError) as e:
             request('/api/runs', {'goal': 'x', 'mode': 'demo', 'use_style': True, 'research_profile': {'track': 'theory'}}, h)
         assert 'voice profile' in json.loads(e.value.read())['error']
         v = json.load(request('/api/literature/style', {'enabled': True}, h))
         assert v['style_enabled'] and v['style']['hash']
+        v = json.load(request('/api/literature/writing', {'section':'discussion'}, h))
+        assert v['style_stale']
+        with pytest.raises(HTTPError) as e:
+            request('/api/runs', {'goal':'x','mode':'demo','use_style':True,'research_profile':{'track':'theory'}}, h)
+        assert 'out of date' in json.loads(e.value.read())['error']
         assert (tmp_path / 'literature' / 'profile.json').exists() and not (tmp_path / 'runs' / 'profile.json').exists()
         v = json.load(request('/api/literature/clear', {}, h))
         assert v['candidate_count'] == 0 and not v['style']

@@ -5,6 +5,7 @@ Recalled, independently rechecked lessons change the script: a refuted claim is 
 re-proposed and a known degenerate measurement is not repeated.
 """
 import json
+import re
 
 DIRECTIONS = [[0, 0, 1], [1, 0, 0], [0, 1, 0], [1, 1, 0], [1, -1, 0], [0, 0, -1]]
 C4Z = [[0, -1, 0], [1, 0, 0], [0, 0, 1]]
@@ -12,6 +13,8 @@ C2Z = [[-1, 0, 0], [0, -1, 0], [0, 0, 1]]
 INVERSION_HALF = [{'R': [[-1, 0], [0, -1]], 's': 1, 'q': ['1/2', 0]}]
 TRANSLATION_HALF = [{'R': [[1, 0], [0, 1]], 's': 1, 'q': ['1/2', 0]}]
 REFUTED = 'nonzero_q_implies_nontrivial'
+SSG_WORDS = re.compile(r'\bssgs?\b|spin[- ]space group|spin group', re.I)
+SSG_RECORD, K_GENERIC, K_SPECIAL = 'N143.10.1', ['1/3', '1/5', '1/7'], ['1/3', '1/3', '0']
 
 
 def tool(name, reason, **arguments):
@@ -29,7 +32,12 @@ def recalled(state, kind):
 class DiscoveryDemo:
     def complete(self, messages, max_tokens):
         s = json.loads(messages[-1]['content'])
-        a = self.experiment(s) if s['research_profile']['track'] == 'experiment' else self.theory(s)
+        if s['research_profile']['track'] == 'experiment':
+            a = self.experiment(s)
+        elif SSG_WORDS.search(s['goal']):
+            a = self.ssg(s)
+        else:
+            a = self.theory(s)
         return {'content': json.dumps(a), 'usage': {}}
 
     def experiment(self, s):
@@ -158,3 +166,60 @@ class DiscoveryDemo:
                 'summary': 'A nonzero shift does not imply gauge nontriviality: inversion with a half shift is removable (C001), while a half-period translation is a certified obstruction (C002). The test is the joint gauge equation. Two follow-up directions build on these two instances.',
                 'limitations': ['Offline policy uses fixed example directions; live mode generates question-dependent proposals.',
                                 'Paper-derived taste is provisional. No expert preference labels or learning gains have been measured.']}
+
+    def ssg(self, s):
+        """Scripted SSG catalog walkthrough. Every number comes from the installed catalog."""
+        calls = s.get('skill_calculations', [])
+        n_tools, n_hyp = s['metrics']['tool_calls'], len(s['hypotheses'])
+        last = s.get('last_observation') or {}
+        skill = lambda op, reason, **args: tool('call_skill', reason, skill='ssg-database', operation=op, arguments=args)
+        if not s['plan']:
+            return {'action': 'plan', 'steps': ['Read the SSG skill and confirm the catalog version',
+                                                'Find a spin space group over parent space group 143 (P3)',
+                                                'Re-verify its stored graded reciprocal group exactly',
+                                                'Test whether every momentum orbit has the full group order',
+                                                'Propose a follow-up about high-symmetry stabilizers'],
+                    'reason': 'Scripted walkthrough of the SSG catalog; live mode chooses records from the actual question.'}
+        if n_tools == 0:
+            return tool('read_skill', 'Read the SSG skill contract and conventions before querying.', skill='ssg-database')
+        if n_tools == 1:
+            return skill('metadata', 'Record the catalog version and stored record count.')
+        if n_tools == 2:
+            if last.get('status') == 'unconfigured':
+                return {'action': 'finish', 'summary': 'The SSG catalog is not installed in this build, so no SSG record was retrieved.',
+                        'limitations': ['Install data/ssg or use a build that bundles the catalog.']}
+            return skill('search', 'List spin space groups whose parent space group is 143 (P3).', parent_space_group=143, limit=20)
+        if n_tools == 3:
+            return skill('get', f'Fetch the stored summary of {SSG_RECORD} and record it as a source.', record_id=SSG_RECORD)
+        if n_tools == 4:
+            return skill('verify_group', 'Recompute generator closure and compare with the stored elements and order.', record_id=SSG_RECORD)
+        if n_hyp == 0:
+            order = calls[-1].get('order') if calls else 'the group order'
+            return {'action': 'hypothesis', 'statement': f'Every momentum orbit of {SSG_RECORD} has {order} distinct momenta (the stored group order).',
+                    'assumptions': ['Stored graded reciprocal quotient and its basis', 'Momenta modulo integer reciprocal translations']}
+        if n_tools == 5:
+            return skill('momentum_orbit', 'Orbit of a generic momentum: no element should fix it.', record_id=SSG_RECORD, k=K_GENERIC)
+        if n_tools == 6:
+            return skill('momentum_orbit', 'Orbit of the K point (1/3,1/3,0), where stabilizers may shrink the orbit.', record_id=SSG_RECORD, k=K_SPECIAL)
+        orbits = [c for c in calls if c['operation'] == 'momentum_orbit']
+        if n_hyp == 1 and len(orbits) == 2:
+            return {'action': 'hypothesis', 'statement': f'Orbit size equals group order divided by the stabilizer size; at K it is {orbits[1]["orbit_size"]}, not the full order.',
+                    'assumptions': ['Exact orbit and stabilizer lists from the stored elements']}
+        ids = [c['calculation_id'] for c in calls]
+        source = next((x['source_id'] for x in s['sources'] if x.get('kind') == 'ssg_database'), None)
+        if not s['directions'] and source:
+            return tool('propose_direction', 'Turn the stabilizer observation into a follow-up calculation.',
+                        title='High-symmetry stabilizers in P3-based spin space groups',
+                        mechanism=f'At K the stored group of {SSG_RECORD} fixes the momentum with a nontrivial stabilizer, so the orbit shrinks; such stabilizers may constrain band degeneracies there (not computed here).',
+                        minimal_model=f'Stored graded reciprocal quotient of {SSG_RECORD} (catalog 0.1.5).',
+                        falsifier='Find a P3-based record whose K-point stabilizer is trivial despite the same graded action.',
+                        next_test='Repeat momentum_orbit at K and M for every record listed by the search and compare stabilizer gradings.',
+                        source_ids=[source], calculation_ids=ids,
+                        taste_alignment='Provisional; follows the supplied interest in spin space groups.')
+        verified = next((c for c in calls if c['operation'] == 'verify_group'), {})
+        return {'action': 'finish',
+                'summary': (f'{SSG_RECORD} re-verified ({verified.get("status")}, order {verified.get("order")}). A generic momentum has an orbit of '
+                            f'{orbits[0]["orbit_size"] if orbits else "?"}; the K point has {orbits[1]["orbit_size"] if len(orbits) > 1 else "?"}, '
+                            'so the claim that every orbit has the full order is false at high-symmetry momenta.'),
+                'limitations': ['Scripted walkthrough, not a live model result.',
+                                'Results apply to the stored reciprocal quotient and parameter choice, not to a material assignment.']}

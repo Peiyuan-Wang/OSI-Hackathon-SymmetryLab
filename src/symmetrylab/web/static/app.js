@@ -55,7 +55,7 @@ function renderTimeline(state) {
 }
 function renderCandidates(state) {
   renderDiscovery(state);
-  $('candidate-count').textContent = `${state.candidates.length + (state.calculations || []).length} records`;
+  $('candidate-count').textContent = `${state.candidates.length + (state.calculations || []).length + (state.skill_calculations || []).length} records`;
   $('candidates').hidden = !state.candidates.length;
   if (!state.candidates.length) { $('candidates').replaceChildren(); return; }
   $('candidates').replaceChildren(...state.candidates.map(candidate => {
@@ -101,9 +101,10 @@ function render(state) {
   $('model-calls').textContent = live ? state.metrics.model_calls : 'Offline';
   $('policy-turns').textContent = live ? `${state.metrics.reported_tokens} reported tokens${state.metrics.usage_missing_calls ? ' (partial)' : ''}` : `No model used · ${state.metrics.policy_turns} scripted steps`;
   $('tool-calls').textContent = state.metrics.tool_calls;
-  const checks = [...state.evidence, ...(state.calculations || [])];
+  const checks = [...state.evidence, ...(state.calculations || []), ...(state.skill_calculations || []).filter(c=>c.operation==='verify_group').map(c=>({certificate_verified:c.status==='verified'}))];
   $('verified').textContent = `${checks.filter(e=>e.certificate_verified).length} / ${checks.length}`;
-  $('elapsed').textContent = `Conditional calculations · ${state.metrics.elapsed_seconds}s`;
+  const orbits = (state.skill_calculations || []).filter(c=>c.operation==='momentum_orbit').length;
+  $('elapsed').textContent = `${orbits ? `+ ${orbits} SSG orbit(s) computed from stored data · ` : 'Conditional calculations · '}${state.metrics.elapsed_seconds}s`;
   $('activity-state').textContent = state.status === 'running' ? '● RUNNING' : state.status.toUpperCase().replaceAll('_',' ');
   $('stop').disabled = state.status !== 'running' || activeRun !== selected;
   renderTimeline(state); renderCandidates(state);
@@ -136,8 +137,6 @@ function setupTrack() {
     $('keywords-field').hidden=true;
     $('hero-title').replaceChildren(document.createTextNode('From material to '),el('em','measurement.'));
     $('hero-description').textContent='Compare magnetic hypotheses exactly, find which measurements can tell them apart, and design the experiment.';
-    $('scope-text').textContent='Conditional single-domain axis constraints and collinear neutron orientation factors. Sample symmetry, energy stability and feasibility need additional evidence.';
-    $('scope-formula').textContent='P(n,Q) = 1 − (n·Q)² / (|n|²|Q|²)';
     $('goal').value='Determine the Neel-axis orientation of L10 MnPt. Compare c-axis and basal-plane hypotheses, search for ambiguous signals, and propose a controlled measurement with conditional predictions.';
     document.title='SymmetryLab · Experimental research';
   } else {
@@ -153,6 +152,14 @@ $('paper-file').onchange=async()=>{
 function renderDiscovery(state) {
   const root=$('discovery-evidence'); root.replaceChildren();
   const card=(title,status)=>{const c=el('div',undefined,'candidate'); c.append(el('small',status),el('h3',title));root.append(c);return c;};
+  for(const result of state.skill_calculations||[]) {
+    const c=card(`${result.calculation_id} · ${result.record_id} · ${result.operation.replaceAll('_',' ')}`,result.status.toUpperCase());
+    if(result.operation==='momentum_orbit' && result.orbit){
+      c.append(el('p',`k = (${result.k.join(', ')}) → orbit of ${result.orbit_size} momenta · stabilizer ${result.stabilizers.length}`));
+      c.append(el('p',result.orbit.map(o=>'('+o.join(', ')+')').join('  ')));
+    } else c.append(el('p',result.status==='verified' ? `Group re-verified exactly · order ${result.order} · closure from generators matches` : `Group check ${result.status}${result.reason ? ' — '+result.reason : ''}`));
+    details(c,'SSG data, exact result and provenance',result);
+  }
   if(state.recalled_lessons?.length) {
     const c=card('Lessons carried forward',`${state.recalled_lessons.length} rechecked counterexamples`);
     c.append(el('p','Only scope-limited strategies are recalled. Previous model conclusions are not treated as facts.'));details(c,'Provenance',state.recalled_lessons);
@@ -160,6 +167,7 @@ function renderDiscovery(state) {
   if(state.taste_profile?.length){const c=card('Research taste','INFERRED · REVIEW PENDING');for(const pref of state.taste_profile)c.append(el('p',pref.preference));details(c,'Preference evidence',state.taste_profile);}
   if(state.sources?.length){const shown=state.sources.filter(x=>x.mentions_material!==false),other=state.sources.length-shown.length;
     const c=card('Source ledger',`${shown.length} RELEVANT SOURCES${other?` · ${other} OFF-TOPIC HIDDEN`:''} · SAMPLE UNRESOLVED`);for(const source of shown){
+    if(source.kind==='ssg_database'){c.append(el('p',`${source.source_id} · SSG ${source.record_id} · local catalog`));continue;}
     let url;try{url=new URL(source.url);}catch{continue;}if(!['https:','http:'].includes(url.protocol))continue;
     const a=el('a',source.source_id+' · '+(source.provider==='arXiv'?'[arXiv] ':'')+[].concat(source.fields.title || source.record_id).join('; '),'source-link');a.href=url.href;a.target='_blank';a.rel='noopener noreferrer';c.append(a);
   } details(c,'Retrieval scope and source records',state.sources);}

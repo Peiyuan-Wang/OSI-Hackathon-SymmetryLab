@@ -52,7 +52,7 @@ Current version: **0.3.0 discovery preview**, 2026-10-22 (Asia/Shanghai). Not ye
 
 ## Paper survey (2026-10-22)
 
-- New `/papers` workspace: arXiv retrieval (physics categories), PhysBERT or lexicon embeddings, Newspaper-style anchored multi-interest ranking with attention routing and reversible feedback, emerging-interest drift, and a deterministic researcher voice profile injected as a separate system message in live runs. See [paper_survey.md](paper_survey.md).
+- New `/papers` workspace: arXiv retrieval, optional PhysBERT or lexicon embeddings, anchored multi-interest ranking with reversible feedback, and emerging-interest signals. Personalization now adds query-source coverage, explicit research intent, evidence-linked historical facets, independent writing selections, corpus freshness checks and a separate post-research writing pass. See [paper_survey.md](paper_survey.md). Hybrid ranking weights and writing quality remain uncalibrated; regression success is not a user-quality benchmark.
 - Verified: 103 tests; end-to-end browser run against live arXiv with PhysBERT (103 candidates, votes re-rank, profile built). Not verified: effect of the voice profile on a real model's prose.
 
 ## Desktop app and connection page (2026-10-22)
@@ -70,3 +70,13 @@ Full-text/PDF paper ingestion, author disambiguation, trained personal preferenc
 See [Discovery benchmark and RSI](design/discovery_benchmark_rsi.md) for the full definitions, source references, experiments and priorities. Local credentials and runtime records remain outside tracked source files.
 
 The v0.2 checkpoint is archived in [reports/v0.2_checkpoint.md](reports/v0.2_checkpoint.md).
+
+## SSG skill integration (2026-10-23)
+
+- Original schema-3 SQLite catalog (67,475 records) and paclet copied locally with matching SHA-256 hashes; data remains Git-ignored.
+- Model-discoverable skill supports metadata, filtered/paginated lookup, reciprocal/O(3)/MG sections, exact momentum orbits and graded generator-closure checks.
+- Source IDs, record hashes and calculation results are retained in the research dossier.
+- Removed the fixed Verification scope UI block; per-result assumptions remain explicit.
+- SQLite quick_check passed; all 26 deterministic sampled group checks passed. This is not exhaustive re-verification.
+- Wolfram paclet execution, arbitrary Hamiltonian calculation and continuous-parameter recomputation are not yet exposed.
+- See `docs/ssg_skill.md` and `scripts/check_ssg_catalog.py`.

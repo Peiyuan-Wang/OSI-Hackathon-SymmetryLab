@@ -73,14 +73,18 @@ def run_agent(goal, output, mode="demo", config=None, client=None, cancelled=lam
     style = config.get("style_prompt")
     if style is not None and (not isinstance(style, str) or not 1 <= len(style) <= 4000):
         raise ValueError("style_prompt must be 1–4000 characters")
-    state["style_profile"] = ({"hash": config.get("style_hash", digest(style)[:16]), "applied": mode == "live"} if style else None)
+    state["style_profile"] = ({"hash": config.get("style_hash", digest(style)[:16]), "applied": False} if style else None)
+    interests = config.get('interest_context')
+    if interests is not None and (not isinstance(interests, dict) or len(json.dumps(interests)) > 20000):
+        raise ValueError('Interest context must be a bounded object')
+    state['interest_context'] = deepcopy(interests)
     state.update(research_profile=profile, sources=[], retrievals=[], structure_assessments=[],
-                 calculations=[], directions=[], experiment_designs=[], taste_profile=[], recalled_lessons=[])
+                 calculations=[], skill_calculations=[], directions=[], experiment_designs=[], taste_profile=[], recalled_lessons=[])
     if profile["reuse_lessons"]:
         from symmetrylab.memory.discovery import recall_lessons
         state["recalled_lessons"] = recall_lessons(output.parent, profile["track"], mode, goal=goal, material=profile.get("material", ""))
     from symmetrylab.memory.discovery import recall_preferences
-    state["preference_feedback"] = recall_preferences(output.parent, profile) if profile["track"] != "legacy" else []
+    state["preference_feedback"] = recall_preferences(output.parent, profile, interest_hash=(interests or {}).get('hash')) if profile["track"] != "legacy" else []
     tools = ResearchTools(state, start + limits["max_seconds"], cancelled, limits["max_candidates"])
 
     def event(kind, data):
@@ -108,9 +112,6 @@ def run_agent(goal, output, mode="demo", config=None, client=None, cancelled=lam
                     if state["plan"] and not state["metrics"]["tool_calls"] else
                     "Continue from last_observation. Choose one new useful tool, revise a falsified hypothesis, or finish when the dossier is supported. Do not repeat completed stages.")
             messages = [{"role": "system", "content": SYSTEM_PROMPT if profile["track"] == "legacy" else DISCOVERY_SYSTEM}]
-            if style:
-                # Separate, lower-priority system message: wording only, never tool or evidence rules.
-                messages.append({"role": "system", "content": style})
             messages.append({"role": "user", "content": json.dumps(snapshot, ensure_ascii=False)})
             # A deliberately conservative UTF-8-byte estimate, not a tokenizer count.
             reserve = len(json.dumps(messages, ensure_ascii=False).encode()) + 1024 + limits["max_output_tokens"]
@@ -167,6 +168,7 @@ def run_agent(goal, output, mode="demo", config=None, client=None, cancelled=lam
                     state["status"] = "completed" if any(e["certificate_verified"] for e in state["evidence"]) else "incomplete"
                     if profile["track"] != "legacy":
                         verified = any(c["certificate_verified"] for c in state["calculations"]) or any(e["certificate_verified"] for e in state["evidence"])
+                        verified = verified or any(c['status'] == 'verified' for c in state['skill_calculations'])
                         # A design may honestly state that no implemented exact kernel applies to the question.
                         no_kernel = profile["track"] == "experiment" and any(not d["calculation_ids"] for d in state["experiment_designs"])
                         state["exact_kernel_applicable"] = not no_kernel or verified
@@ -199,6 +201,12 @@ def run_agent(goal, output, mode="demo", config=None, client=None, cancelled=lam
     except (RuntimeError, OSError) as exc:
         state["status"] = "failed"
         state["limitations"].append(str(exc))
+    if style and mode == 'live' and state['summary'] and state['status'] in {'completed', 'incomplete'}:
+        from .writing import rewrite
+        event('writing_started', {'profile_hash': state['style_profile']['hash']})
+        state['writing_audit'] = rewrite(state, client, style, config.get('writing_context', {}), tools.deadline, cancelled)
+        state['style_profile']['applied'] = state['writing_audit']['status'] == 'applied'
+        event('writing_finished', state['writing_audit'])
     state["evidence_hash"] = digest({"candidates": state["candidates"], "evidence": state["evidence"], "claim_checks": state["claim_checks"], "calculations": state["calculations"], "sources": state["sources"]})
     event("finished", {"status": state["status"], "evidence_hash": state["evidence_hash"]})
     write_json(output / "result.json", state)

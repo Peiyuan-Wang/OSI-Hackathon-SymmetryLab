@@ -11,6 +11,25 @@ sys.path.insert(0, os.path.join(root, 'src'))
 hidden = collect_submodules('symmetrylab') + ['webview', 'smoke']
 # The interface files (HTML/CSS/JS) are read from symmetrylab/web/static at runtime.
 datas = [(os.path.join(root, 'src', 'symmetrylab', 'web', 'static'), os.path.join('symmetrylab', 'web', 'static'))]
+datas += [(os.path.join(root, 'src', 'symmetrylab', 'skills', 'ssg-database'), os.path.join('symmetrylab', 'skills', 'ssg-database'))]
+# The SSG catalog is bundled by default (SYMMETRYLAB_BUNDLE_SSG=0 builds without it).
+# A missing or altered catalog stops the build instead of producing an app without SSG data.
+bundle_ssg = os.environ.get('SYMMETRYLAB_BUNDLE_SSG', '1') != '0'
+if bundle_ssg:
+    import hashlib, json
+    ssg_dir = os.path.join(root, 'data', 'ssg')
+    manifest = json.load(open(os.path.join(ssg_dir, 'manifest.json'), encoding='utf-8'))
+    entry = next(f for f in manifest['files'] if f['file'].endswith('.sqlite'))
+    catalog = os.path.join(ssg_dir, entry['file'])
+    if not os.path.isfile(catalog):
+        raise SystemExit(f'SSG catalog missing: {catalog}. Copy it to data/ssg/ or build with SYMMETRYLAB_BUNDLE_SSG=0.')
+    digest = hashlib.sha256()
+    with open(catalog, 'rb') as f:
+        for chunk in iter(lambda: f.read(1 << 20), b''):
+            digest.update(chunk)
+    if digest.hexdigest() != entry['sha256']:
+        raise SystemExit('SSG catalog SHA-256 does not match data/ssg/manifest.json; refusing to bundle it.')
+    datas += [(catalog, os.path.join('data', 'ssg'))]
 excludes = ['tkinter', 'matplotlib', 'IPython', 'notebook', 'pytest', 'playwright']
 if sys.platform == 'darwin':
     excludes += ['gi', 'PyQt5', 'PyQt6', 'PySide2', 'PySide6', 'qtpy']

@@ -49,6 +49,8 @@
 .papers .candidate.emerging{border-color:#c39562;background:#fff7ee}
 .papers input:focus,.papers textarea:focus,.papers select:focus{outline-color:#b88bb9}
 .papers button:focus-visible,.papers a:focus-visible,.papers summary:focus-visible{outline-color:#b88bb9}
+.papers .settings-grid textarea{border:1px solid var(--line);border-radius:5px;padding:12px;background:#fdf8fc;color:var(--ink);resize:vertical;line-height:1.65}
+.papers #facets{border-top:1px solid var(--line)}.papers #writing-samples>div{padding:12px 0;border-bottom:1px solid var(--line)}
 
 /* Connection settings: warm copper palette for the fourth workspace. */
 .connection-page{--ink:#49382e;--muted:#85766c;--green:#995432;--paper:#f8f4ee;--white:#fffdf8;--accent:#f1dbc4;--line:#e8ddd0}

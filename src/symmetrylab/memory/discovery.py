@@ -76,7 +76,7 @@ def recall_lessons(root, track, mode, limit=4, goal=None, material=''):
     return lessons
 
 
-def recall_preferences(root, profile, limit=4):
+def recall_preferences(root, profile, limit=4, interest_hash=None):
     """Human feedback only, scoped to the exact supplied paper text and research track."""
     output=[]
     for path in sorted(Path(root).glob('*/preference_feedback.jsonl'),key=lambda p:p.stat().st_mtime,reverse=True)[:100]:
@@ -86,6 +86,8 @@ def recall_preferences(root, profile, limit=4):
             if result_path.is_symlink() or result_path.stat().st_size>2_000_000: continue
             state=json.loads(result_path.read_text(encoding='utf-8'))
             previous=state.get('research_profile',{})
+            if (state.get('interest_context') or {}).get('hash') != interest_hash:
+                continue
             if previous.get('track')!=profile['track'] or previous.get('papers','')!=profile['papers']:
                 continue
             if not profile['papers'] and previous.get('keywords','') != profile.get('keywords',''):

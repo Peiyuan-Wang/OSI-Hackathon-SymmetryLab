@@ -107,6 +107,7 @@ def test_cone_limit_and_half_life():
 def test_voice_profile_is_traceable_and_bounded(tmp_path):
     lit, _ = survey(tmp_path)
     lit.vote('arXiv:0001.00003', 'up')
+    lit.style_vote('arXiv:0001.00003', True)
     v = lit.rebuild_style()
     s = v['style']
     assert s['sources'] == {'own': ['arXiv:2510.04184'], 'liked': ['arXiv:0001.00003']}

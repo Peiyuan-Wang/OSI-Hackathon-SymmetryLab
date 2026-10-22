@@ -14,6 +14,8 @@ class ResearchTools:
     def __init__(self, state, deadline, cancelled, max_candidates=40):
         self.state, self.deadline, self.cancelled = state, deadline, cancelled
         self.max_candidates = max_candidates
+        from symmetrylab.skills.registry import SkillRegistry
+        self.skills = SkillRegistry(state, self.remaining)
 
     def remaining(self):
         if self.cancelled():
@@ -113,6 +115,8 @@ class ResearchTools:
 
     def call(self, name, arguments):
         self.remaining()
+        if name in self.skills.NAMES:
+            return self.skills.call(name, arguments)
         from symmetrylab.tools.discovery import DiscoveryTools
         if name in DiscoveryTools.NAMES:
             return DiscoveryTools(self.state, self.remaining).call(name, arguments)

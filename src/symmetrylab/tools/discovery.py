@@ -117,13 +117,14 @@ class DiscoveryTools:
             raise ValueError('Reference at least one calculation or gauge certificate')
         available={c['calculation_id'] for c in self.state['calculations'] if c['certificate_verified']}
         available.update(e['candidate_id'] for e in self.state['evidence'] if e['certificate_verified'])
+        available.update(c['calculation_id'] for c in self.state.get('skill_calculations', []) if c['status'] in {'computed', 'verified'})
         if any(not isinstance(x,str) or x not in available for x in ids):
             raise ValueError('Unknown or uncertified evidence ID')
         return ids
 
     def propose_direction(self,title,mechanism,minimal_model,falsifier,next_test,source_ids,calculation_ids,taste_alignment):
         entry={'direction_id':f'D{len(self.state["directions"])+1:03d}',
-               'source_ids':self.source_ids(source_ids),'calculation_ids':self.calculation_ids(calculation_ids),
+               'source_ids':self.source_ids(source_ids),'calculation_ids':self.calculation_ids(calculation_ids,allow_empty=True),
                'status':'unverified_research_proposal','novelty':'not_established',
                'expert_preference':'not_rated'}
         for key,value in locals().copy().items():
@@ -152,6 +153,11 @@ class DiscoveryTools:
             origin=row.get('origin')
             if origin in {'papers','keywords','taste_notes'}:
                 source=profile[origin]
+            elif origin == 'interest_profile':
+                import json
+                if not self.state.get('interest_context'):
+                    raise ValueError('No shared interest profile is available')
+                source=json.dumps(self.state['interest_context'], ensure_ascii=False)
             else:
                 ids=self.source_ids([origin]); source=str(next(s['fields'] for s in self.state['sources'] if s['source_id']==ids[0]))
             excerpt=bounded_text(row.get('excerpt'),'excerpt',800)

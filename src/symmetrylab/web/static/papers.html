@@ -9,13 +9,23 @@
 <main><header><div class="breadcrumb">Workspace <span>/</span> <span>Paper survey</span></div><span class="chip">RESEARCH PREVIEW · v0.3</span></header>
 <section class="hero"><div><h1>Read what <em>you</em> would read.</h1><p>Find arXiv papers near your work, learn from your votes, and distil your writing voice for the model.</p></div></section>
 
-<section class="composer panel"><div class="section-heading"><h2><span class="number">01</span> Your interests</h2><span class="subtle">Your own papers count most; likes refine the profile</span></div>
+<section class="composer panel"><div class="section-heading"><h2><span class="number">01</span> Your interests</h2><span class="subtle">Current intent guides; paper history supplies context</span></div>
 <div class="settings-grid">
 <label>Interest keywords — one per line<textarea id="keywords" rows="5" maxlength="1500" placeholder="spin-space groups&#10;altermagnetism&#10;tunnel magnetoresistance in antiferromagnets"></textarea></label>
 <label>Your published papers — arXiv ID, DOI or exact title, one per line<textarea id="papers" rows="5" maxlength="4000" placeholder="2510.04184&#10;10.1103/PhysRevB.104.144403&#10;Longitudinal transport spin polarization of spin degenerate antiferromagnets"></textarea></label>
 </div>
+<details class="context-details"><summary>Research questions, methods and current intent</summary>
+<div class="settings-grid">
+<label>Questions worth pursuing<textarea id="interest-problem" rows="2" maxlength="800" placeholder="Which symmetry conditions distinguish the mechanisms?"></textarea></label>
+<label>Preferred methods<textarea id="interest-methods" rows="2" maxlength="800" placeholder="Exact algebra, minimal models, representation theory"></textarea></label>
+<label>Current project goal<textarea id="interest-goal" rows="2" maxlength="800"></textarea></label>
+<label>Research taste and exclusions<textarea id="interest-taste" rows="2" maxlength="800" placeholder="Prefer a falsifiable mechanism over another material screening study."></textarea></label>
+</div>
+<label class="reuse-option"><input id="share-interests" type="checkbox"> Use these preferences and paper-derived topic excerpts in research planning</label>
+<p>When enabled, this profile is sent to your configured model API during live research. The current research brief takes precedence. Paper topics describe past work, not confirmed future preferences.</p>
+</details>
 <label class="reuse-option"><input id="physics-only" type="checkbox" checked> Physics categories only (cond-mat, quant-ph, physics, hep-th, math-ph)</label>
-<div class="composer-bottom"><p class="privacy-note">Keywords, titles and IDs are sent to arXiv (and DOIs to Crossref). Abstracts are embedded locally; nothing is uploaded elsewhere.</p>
+<div class="composer-bottom"><p class="privacy-note">Search sends keywords and derived query terms to arXiv, and DOIs to Crossref. Embeddings run locally. Enabled interest and writing profiles are sent to your configured model API in live research.</p>
 <div class="run-actions"><button class="secondary" id="save">Save profile</button><button class="primary" id="search">Find papers <span>↗</span></button></div></div>
 <p id="problems" class="mode-note" hidden></p><div id="notice" role="status" hidden></div></section>
 
@@ -25,9 +35,21 @@
 <div id="ranked"><div class="empty"><div class="empty-symbol">▤</div><h3>Your feed starts with your work.</h3><p>Add keywords or papers, then Find papers. Vote to re-rank instantly.</p></div></div></section>
 <section class="panel evidence-panel"><div class="section-heading"><h2><span class="number">03</span> Interest map</h2><span class="subtle" id="interest-count">0 anchors</span></div>
 <div id="interests"></div>
+<div id="facets"></div>
 <div class="scope-note"><strong>How ranking works</strong><p>Each keyword and paper is an anchor (Q). Papers are keys/values (K = V). Attention = softmax(cos(anchor, paper) / 0.12) assigns each vote to anchors; likes pull an anchor, dislikes push it, limited to 25°. Likes no anchor explains are flagged as emerging interests. Ported from Newspaper's anchored multi-interest profile; no model is trained.</p></div></section></div>
 
-<section class="panel report-panel"><div class="section-heading"><h2><span class="number">04</span> Researcher voice profile</h2><div class="report-controls"><label class="reuse-option"><input id="style-enabled" type="checkbox"> Use in live model runs</label><button class="secondary" id="build-style">Build from my papers &amp; likes</button><a id="download-style" class="download disabled">↓ Prompt</a></div></div>
-<p class="report-caption">A system prompt distilled from your papers (primary) and liked papers (secondary): focus, terminology, register and exemplar sentences. It changes wording only — never tools, evidence labels or verification.</p>
-<div id="style" class="markdown"><p class="placeholder">Build the profile after adding your papers or liking a few results.</p></div></section>
+<section class="panel report-panel"><div class="section-heading"><h2><span class="number">04</span> Researcher voice profile</h2><div class="report-controls"><label class="reuse-option"><input id="style-enabled" type="checkbox"> Use in live model runs</label><button class="secondary" id="build-style">Build from approved sources</button><a id="download-style" class="download disabled">↓ Prompt</a></div></div>
+<p class="report-caption">Content likes guide research interests. Select “Use writing style” separately on a paper to include its prose. The writing pass runs after research and retains the original synthesis if unavailable.</p>
+<div class="settings-grid connection-grid">
+<label>Target reader<select id="writing-audience"><option value="researcher">Researcher</option><option value="student">Physics student</option><option value="general">Interdisciplinary reader</option></select></label>
+<label>Section to write<select id="writing-section"><option value="discussion">Discussion</option><option value="abstract">Abstract</option><option value="derivation">Derivation</option><option value="experiment">Experimental proposal</option><option value="limitations">Limitations</option></select></label>
+<label>Explanation depth<select id="writing-detail"><option value="balanced">Essential reasoning</option><option value="concise">Concise expert answer</option><option value="tutorial">Explain prerequisites</option></select></label>
+<label>Writing preferences<textarea id="writing-notes" rows="3" maxlength="800" placeholder="State assumptions before the result. Avoid generic introductions."></textarea></label>
+<label>Approved example paragraph<textarea id="writing-sample" rows="4" maxlength="1500" placeholder="Paste a paragraph you wrote or explicitly approve. It may be sent to your model API when writing is enabled."></textarea></label>
+<label>Example paragraph section<select id="sample-section"><option value="discussion">Discussion</option><option value="abstract">Abstract</option><option value="derivation">Derivation</option><option value="experiment">Experimental proposal</option><option value="limitations">Limitations</option></select></label>
+</div>
+<div class="composer-bottom"><button class="secondary" id="save-writing">Save writing preferences</button><button class="secondary" id="add-sample">Add approved paragraph</button></div>
+<div id="writing-samples" class="markdown storage-note"></div>
+<p id="style-state" class="mode-note" role="status"></p>
+<div id="style" class="markdown"><p class="placeholder">Add a paper with an abstract or an approved paragraph, then build a profile.</p></div></section>
 </main></body></html>

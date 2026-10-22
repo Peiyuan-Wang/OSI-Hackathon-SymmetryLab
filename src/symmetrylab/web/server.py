@@ -102,7 +102,8 @@ class Workbench:
         config = self.connection.client_config()
         limits = limits_from({"limits": request.get("limits", {}), "research_profile": profile})
         client = OpenAICompatibleClient(config) if mode == "live" else None
-        style = self.literature.active_style() if request.get("use_style") else None
+        style = self.literature.active_style(goal) if request.get("use_style") else None
+        interests = self.literature.planning_context(goal)
         if request.get("use_style") and not style:
             raise ValueError("No active voice profile. Build and enable it on the Paper survey page first.")
         with self.lock:
@@ -117,7 +118,10 @@ class Workbench:
                 self.snapshots[identifier] = state
         def worker():
             try:
-                extra = {"style_prompt": style["prompt"], "style_hash": style["hash"]} if style else {}
+                extra = {"style_prompt": style["prompt"], "style_hash": style["hash"],
+                         "writing_context": {"preferences": style["writing"], "examples": style["task_examples"]}} if style else {}
+                if interests:
+                    extra['interest_context'] = interests
                 run_agent(goal, self.store.folder(identifier), mode, {"limits": limits, **extra, **({"research_profile": profile} if profile["track"] != "legacy" else {})}, client, self.cancel.is_set, update)
             except Exception:
                 # Never expose arbitrary exception text from infrastructure or credentials.
@@ -257,11 +261,15 @@ def make_server(port=8787, root="data/workbench", config=None):
                 if self.path.startswith("/api/literature/"):
                     lit, action = app.literature, self.path.rsplit("/", 1)[-1]
                     if action == "profile":
-                        lit.set_profile(data.get("keywords", []), data.get("papers", []), data.get("physics_only", True))
+                        lit.set_profile(data.get("keywords", []), data.get("papers", []), data.get("physics_only", True), data.get('preferences'))
                     elif action == "search":
                         lit.search()
                     elif action == "vote":
                         lit.vote(data.get("paper_id"), data.get("vote"))
+                    elif action == "style-vote":
+                        lit.style_vote(data.get('paper_id'), data.get('selected'))
+                    elif action == "writing":
+                        lit.set_writing(data)
                     elif action == "adopt":
                         lit.adopt(data.get("term"))
                     elif action == "style":
