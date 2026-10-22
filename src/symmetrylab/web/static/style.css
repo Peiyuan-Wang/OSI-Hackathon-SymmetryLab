@@ -23,3 +23,10 @@
 .drift-bar{height:5px;background:#eef1e8;border-radius:3px;margin:8px 0}.drift-bar span{display:block;height:100%;background:#c9a24a;border-radius:3px}
 .candidate.emerging{border-color:#c9a24a;background:#fdf9ee}.link-button{background:none;border:0;padding:0;color:#2e5a45;text-decoration:underline;cursor:pointer;font-size:inherit}
 .papers .settings-grid{padding:0 24px;grid-template-columns:1fr 1fr}.papers .settings-grid label{min-width:0}.papers .settings-grid textarea{width:100%;box-sizing:border-box;font-size:12px;margin-top:6px}
+.connection-row{display:flex;align-items:center;gap:10px;margin:14px 24px 0;padding:12px 14px;border:1px solid var(--line);border-radius:6px;font-size:12px;color:#5e7254;background:#f8faf3}
+.connection-row a{margin-left:auto}.connection-row .status-dot{flex:none}.status-dot.off{background:#c9a24a;box-shadow:none}
+.mode-picker input{width:64px;padding:8px;font-size:12px}
+.connection-grid{grid-template-columns:1fr 1fr;padding:0 24px}.connection-grid input,.connection-grid select{width:100%;box-sizing:border-box}
+.connection-page .composer-bottom{justify-content:space-between}
+.storage-note{margin:0 24px 24px}
+.connection-page .connection-test{margin:10px 24px 0;font-size:11px;color:#6c7d68}#side-status{white-space:pre-line}

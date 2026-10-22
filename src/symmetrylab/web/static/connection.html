@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SymmetryLab · Connection</title><link rel="stylesheet" href="/style.css"><script src="/desktop.js" defer></script><script src="/connection.js" defer></script></head>
+<body class="connection-page">
+<aside class="sidebar"><a class="brand" href="/"><span class="brandmark">S<span>✳</span></span><span>SymmetryLab<small>VERIFIABLE RESEARCH</small></span></a>
+<div class="workspace-label">WORKSPACE <span>LOCAL</span></div><a class="nav track-link" href="/">◈ &nbsp; Theory exploration</a><a class="nav track-link" href="/experiment">◇ &nbsp; Experimental research</a><a class="nav track-link" href="/papers">▤ &nbsp; Paper survey</a><a class="nav track-link active" href="/connection">⇄ &nbsp; Connection</a>
+<div class="sidebar-section">STATUS</div><div class="history"><p id="side-status">Not configured</p></div>
+<div class="sidebar-footer"><div class="status-dot"></div> Local workspace <small>Saved on this computer only<br>SymmetryLab / 0.3 preview</small></div></aside>
+<main><header><div class="breadcrumb">Workspace <span>/</span> <span>Connection</span></div><span class="chip">RESEARCH PREVIEW · v0.3</span></header>
+<section class="hero"><div><h1>Connect a <em>model.</em></h1><p>Any OpenAI-compatible service. Settings and key are saved on this computer and used for Live model research.</p></div></section>
+
+<section class="composer panel"><div class="section-heading"><h2><span class="number">01</span> Model connection</h2><span class="subtle" id="saved-state">Not saved</span></div>
+<div class="settings-grid connection-grid">
+<label>Base URL<input id="base-url" autocomplete="off" spellcheck="false" placeholder="https://api.example.com/v1"></label>
+<label>Model ID<input id="model" autocomplete="off" spellcheck="false" placeholder="Model ID from your provider"></label>
+<label>API protocol<select id="protocol"><option value="chat_completions">Chat Completions</option><option value="responses">Responses</option></select></label>
+<label>API key<input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="Paste your API key"></label>
+</div>
+<p class="mode-note">Base URL ends at the version path (usually <code>/v1</code>), without <code>/chat/completions</code> or <code>/responses</code>. Leave the key field empty to keep the saved key.</p>
+<div class="composer-bottom"><div class="run-actions"><button class="secondary" id="forget">Forget saved key</button></div>
+<div class="run-actions"><button class="secondary" id="test">Test connection</button><button class="primary" id="save">Save <span>↗</span></button></div></div>
+<p class="connection-test"><span id="status" role="status">Test sends one short real request to the service.</span></p>
+<div id="notice" role="status" hidden></div></section>
+
+<section class="panel report-panel"><div class="section-heading"><h2><span class="number">02</span> Where this is stored</h2></div>
+<div class="markdown storage-note"><ul>
+<li>A file readable only by your user account (<code>connection.json</code>, permission 0600) in the SymmetryLab data folder. It is not encrypted.</li>
+<li>The key is never shown again, never sent back to this page, and never written to run records, reports or evidence downloads.</li>
+<li>Live runs send your brief, selected paper text and tool feedback to the Base URL above.</li>
+</ul></div></section>
+</main></body></html>

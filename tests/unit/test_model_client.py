@@ -51,7 +51,7 @@ def test_remote_error_body_is_not_exposed(monkeypatch):
     assert str(error.value) == "model request failed (HTTP 401)"
 
 
-def test_cc_switch_responses_uses_placeholder_and_bypasses_proxy(monkeypatch):
+def test_loopback_responses_uses_saved_key_and_bypasses_proxy(monkeypatch):
     seen = {}
     class Response:
         def __enter__(self): return self
@@ -66,20 +66,20 @@ def test_cc_switch_responses_uses_placeholder_and_bypasses_proxy(monkeypatch):
         seen['handlers']=handlers
         return Opener()
     monkeypatch.setattr(module,'build_opener',build)
-    client=module.OpenAICompatibleClient({'base_url':'http://127.0.0.1:15721/v1','model':'test','protocol':'responses','auth_mode':'cc_switch'})
+    client=module.OpenAICompatibleClient({'base_url':'http://127.0.0.1:8000/v1','model':'test','protocol':'responses','api_key':'saved-key-for-test'})
     result=client.complete([{'role':'system','content':'Be exact'},{'role':'user','content':'test'}],64)
     assert result['content']=='OK'
     assert seen['url'].endswith('/v1/responses')
     assert seen['body']['instructions']=='Be exact'
     assert seen['body']['max_output_tokens']==64 and seen['body']['store'] is False
-    assert seen['auth']=='Bearer PROXY_MANAGED'
+    assert seen['auth']=='Bearer saved-key-for-test'
     assert any(isinstance(h,module.ProxyHandler) and not h.proxies for h in seen['handlers'])
 
 
 @pytest.mark.parametrize('url',['http://example.com/v1','https://user:secret@example.com/v1','https://example.com/v1?secret=x'])
 def test_unsafe_connection_rejected(url):
     with pytest.raises(ValueError):
-        module.OpenAICompatibleClient({'base_url':url,'model':'test','auth_mode':'cc_switch'})
+        module.OpenAICompatibleClient({'base_url':url,'model':'test','api_key':'k'})
 
 
 def test_responses_sse_and_incomplete(monkeypatch):
@@ -92,7 +92,7 @@ def test_responses_sse_and_incomplete(monkeypatch):
     class Opener:
         def open(self,*args,**kwargs): return Response()
     monkeypatch.setattr(module,'build_opener',lambda *handlers:Opener())
-    client=module.OpenAICompatibleClient({'base_url':'http://localhost:15721/v1','model':'test','protocol':'responses','auth_mode':'cc_switch'})
+    client=module.OpenAICompatibleClient({'base_url':'http://localhost:8000/v1','model':'test','protocol':'responses','api_key':'k'})
     assert client.complete([],64)['content']=='OK'
     raw=b'event: response.incomplete\ndata: {"type":"response.incomplete"}\n\n'
     with pytest.raises(RuntimeError,match='did not complete'): client.complete([],64)
@@ -102,11 +102,40 @@ def test_key_pasted_into_variable_field_is_rejected_without_echo():
     import pytest
     from symmetrylab.model.client import OpenAICompatibleClient
     with pytest.raises(ValueError) as e:
-        OpenAICompatibleClient({"base_url": "https://api.example.test/v1", "model": "m", "auth_mode": "environment", "api_key_env": "sk-abc123-def"})
+        OpenAICompatibleClient({"base_url": "https://api.example.test/v1", "model": "m", "api_key_env": "sk-abc123-def"})
     assert "NAME" in str(e.value) and "sk-abc" not in str(e.value)
 
 
 def test_server_explains_failures_with_hints():
     from symmetrylab.web.server import explain
-    assert "export SYMMETRYLAB_API_KEY" in explain("API key environment variable is not set")
+    assert "Open Connection" in explain("No API key saved")
     assert "/v1" in explain("model request failed (HTTP 404)")
+
+
+def test_connection_store_saves_key_privately_and_never_exposes_it(tmp_path, monkeypatch):
+    import os, stat
+    from symmetrylab.model.connection import ConnectionStore
+    monkeypatch.delenv("SYMMETRYLAB_API_KEY", raising=False)
+    store = ConnectionStore(tmp_path / "connection.json")
+    assert store.public()["ready"] is False and store.public()["key_source"] == "none"
+    view = store.save({"base_url": "https://api.example.test/v1", "model": "m1", "protocol": "responses", "api_key": "sk-test-1234567890abcd"})
+    assert view == {"base_url": "https://api.example.test/v1", "model": "m1", "protocol": "responses", "key_saved": True,
+                    "key_hint": "abcd", "key_source": "saved", "ready": True}
+    assert stat.S_IMODE(os.stat(tmp_path / "connection.json").st_mode) == 0o600
+    assert "sk-test" not in json.dumps(view)
+    # An empty key field keeps the saved key; other fields update.
+    store.save({"base_url": "https://api.example.test/v1", "model": "m2", "protocol": "responses"})
+    assert store.client_config()["api_key"] == "sk-test-1234567890abcd" and store.public()["model"] == "m2"
+    assert store.save({}, forget_key=True)["key_saved"] is False
+    with pytest.raises(ValueError):
+        store.save({"base_url": "http://remote.example/v1", "model": "m"})       # plain HTTP off loopback
+    with pytest.raises(ValueError):
+        store.save({"base_url": "https://a.test/v1", "model": "m", "api_key": "two words"})
+    with pytest.raises(ValueError):
+        store.save({"base_url": "https://a.test/v1", "model": "m", "auth_mode": "cc_switch"})
+
+
+def test_missing_key_message_points_to_connection_page(monkeypatch):
+    monkeypatch.delenv("SYMMETRYLAB_API_KEY", raising=False)
+    with pytest.raises(ValueError, match="No API key saved"):
+        module.OpenAICompatibleClient({"base_url": "https://api.example.test/v1", "model": "m"})

@@ -87,7 +87,7 @@ def test_http_security_and_demo(tmp_path):
     try:
         with request('/') as response:
             html = response.read().decode()
-            assert 'CC Switch local routing' in html and 'lang="en"' in html
+            assert 'href="/connection"' in html and 'CC Switch' not in html and 'lang="en"' in html
             assert "frame-ancestors 'none'" in response.headers['Content-Security-Policy']
         with request('/api/bootstrap') as response:
             boot = json.load(response)
@@ -115,6 +115,13 @@ def test_http_security_and_demo(tmp_path):
             assert '.md' in response.headers['Content-Disposition']
             assert 'simulated offline policy' in response.read().decode()
         with pytest.raises(HTTPError): request('/api/runs/../../secret')
+        # Saved connection: key accepted once, never returned by any read endpoint.
+        with request('/api/connection',{'base_url':'https://api.example.test/v1','model':'m','protocol':'responses','api_key':'sk-test-1234567890wxyz'},headers) as response:
+            assert json.load(response)['key_hint'] == 'wxyz'
+        for path in ('/api/bootstrap','/api/runs','/api/runs/'+run_id,'/connection'):
+            with request(path) as response: assert b'sk-test' not in response.read()
+        assert (tmp_path/'connection.json').exists() and not list((tmp_path/'runs').rglob('connection.json'))
+        with pytest.raises(HTTPError): request('/api/connection',{'api_key':'sk-x'},dict(headers,**{'X-SymmetryLab-Token':'wrong'}))
         # Restart recovery must identify unfinished persisted runs.
         state['status']='running'
         (tmp_path/'runs'/run_id/'state.json').write_text(json.dumps(state))

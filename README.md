@@ -10,6 +10,14 @@ The **v0.3 preview** preserves the original theory layout and adds a matching ex
 
 Read [the discovery benchmark and RSI design](docs/design/discovery_benchmark_rsi.md) for scientific definitions, source boundaries, the benchmark collection plan, controlled experiments and remaining work. This is a research prototype; sample-specific magnetic structure, growth feasibility, quantitative experimental signals and novel discoveries are not established.
 
+## Desktop app (macOS)
+
+```bash
+scripts/build_mac_app.sh && open dist/SymmetryLab.app
+```
+
+Installs all dependencies into `.venv`, runs the tests and builds a native app with the same layout. Add `--lite` to leave out PyTorch/PhysBERT. Details: [Desktop app](docs/desktop_app.md).
+
 ## Installation
 
 Run these commands from the repository root. In PyCharm, select the project's `.venv` interpreter. Python >=3.11 is required; the current implementation has been tested on Python 3.12.7.
@@ -50,16 +58,9 @@ Open **http://127.0.0.1:8787/papers** to rank arXiv papers against your keywords
 
 Use only paper text you intend to share with the chosen provider. The application never scans paper folders automatically. Model-generated prose remains unverified even when it cites a checked calculation.
 
-### Connect through CC Switch
+### Connect a model
 
-1. In CC Switch, configure a provider under **Codex** and enable its **local routing** service.
-2. In the workbench, expand **Model connection** and choose **CC Switch local routing**.
-3. Keep Base URL `http://127.0.0.1:15721/v1` (or your configured loopback address), choose **Responses**, and enter a model ID supported by your provider.
-4. Click **Test connection**. After it succeeds, select **Live model research** and start a run.
-
-CC Switch injects the upstream credential. SymmetryLab sends a local placeholder and never reads CC Switch's database or Codex authentication files. Switching a provider does not guarantee the same model ID remains available; update the field when needed. See [connection details and troubleshooting](docs/cc_switch.md).
-
-For a direct custom provider, select **Custom OpenAI-compatible service**, enter its Base URL/model, choose **Chat Completions** or **Responses**, and set `SYMMETRYLAB_API_KEY` in the environment used to start the server. The interface accepts an environment-variable name, never the key itself.
+Open **Connection** in the sidebar. Enter the service's Base URL (ending at `/v1`, without `/chat/completions` or `/responses`), the model ID, the protocol (**Chat Completions** or **Responses**) and your API key, click **Test connection**, then **Save**. Settings are stored on this computer in `connection.json` (user-only permission 0600, not encrypted); the key is never shown again or written to run records. Any OpenAI-compatible service works. If no key is saved, `SYMMETRYLAB_API_KEY` from the environment is used.
 
 **Validation boundary:** adapters and adaptive behavior are covered by tests with model doubles. The new workflow has not yet been validated against a real model provider. See the dated implementation status for source-service and browser checks.
 
@@ -98,8 +99,8 @@ Use `--predicate individual_implies_joint` to demonstrate why individual solvabi
 # Offline policy exercising the same tools and state machine
 .venv/bin/python -m symmetrylab research --mode demo --goal "Test whether nonzero shifts imply gauge nontriviality" --output data/research-demo
 
-# Edit the model ID in a copy of config/cc-switch.example.json first
-.venv/bin/python -m symmetrylab research --mode live --config config/cc-switch.example.json --goal "Explore valid C2 actions and find a gauge counterexample" --output data/research-live
+# Edit base_url/model in a copy of config/live.example.json and export SYMMETRYLAB_API_KEY first
+.venv/bin/python -m symmetrylab research --mode live --config config/live.example.json --goal "Explore valid C2 actions and find a gauge counterexample" --output data/research-live
 ```
 
 In live research, the model proposes a plan, constructs candidate matrices and shifts, selects registered tools, observes their results, and revises its hypotheses. It has no shell or arbitrary code-execution access. The controller imposes call, candidate, time and token-estimate budgets. Free-form summaries stay unverified; independent exact certificates support instance facts. Read [the workbench design](docs/agent_workbench.md) for contracts and limits.

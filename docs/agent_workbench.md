@@ -12,7 +12,7 @@ Budgets bound model requests, tool calls, candidates, output tokens, total estim
 
 ## Model connection
 
-Use an OpenAI-compatible Chat Completions or Responses endpoint. A CC Switch preset uses Responses at http://127.0.0.1:15721/v1 with proxy-managed authentication. See [CC Switch setup](cc_switch.md). Configure a Base URL (normally ending in /v1), model ID, and the name of an API-key environment variable. The key itself is read only by the backend and is never sent to the browser or written to configuration/log files. The default environment variable is SYMMETRYLAB_API_KEY. The controller uses JSON actions in ordinary messages, so native provider function-calling support is not required.
+Use an OpenAI-compatible Chat Completions or Responses endpoint. Configure the Base URL (normally ending in /v1), model ID, protocol and API key on the **Connection** page. The key is saved in a user-only local file and is never sent back to the interface or written to run records, traces or reports; CLI runs may instead use the SYMMETRYLAB_API_KEY environment variable. The controller uses JSON actions in ordinary messages, so native provider function-calling support is not required.
 
 Demo mode uses a clearly identified simulated policy with the same tool execution path. Its actual mathematics is computed locally; it is not evidence of a live LLM's capabilities. The simulator does not read benchmark answers.
 
@@ -31,7 +31,7 @@ Test adaptive multi-turn behavior with a scripted model double that repairs an i
 - `agent_core/workbench.py`: `run_agent(goal, output, mode, config, client, cancelled, on_update)` and validated budgets.
 - `agent_core/prompt.py`: actual packaged JSON-action prompt and full tool contracts.
 - `tools/research.py`: six registered tools; no provider or browser dependency.
-- `model/client.py`: two protocols, environment or CC Switch authentication, no redirects, bounded responses, JSON/SSE response parsing.
+- `model/client.py`: two protocols, saved or environment API key, no redirects, bounded responses, JSON/SSE response parsing.
 - `model/simulated.py`: clearly labeled offline policy that reacts to current state.
 - `database/workbench.py`: generated IDs, constrained paths, persisted snapshots and history.
 - `web/server.py`: loopback HTTP, per-server request token, origin checks, one worker, cancellation and download endpoints.

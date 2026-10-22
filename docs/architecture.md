@@ -25,7 +25,7 @@ All newly generated text is English. Reports use the `_en.md` suffix. A legacy r
 
 ```text
 Browser → loopback web server → agent_core/workbench
-                              → model/client → CC Switch or custom service
+                              → model/client → OpenAI-compatible service
                               → tools/research → verifier → independent certificate
                               → database → state, trace, reports
 ```

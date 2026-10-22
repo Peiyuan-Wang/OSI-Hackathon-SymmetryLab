@@ -1,0 +1,8 @@
+# PhysBERT encoder for the paper survey. Apple Silicon / Linux / Windows; no Intel-macOS wheel for torch 2.14.
+torch==2.14.1
+sentence-transformers==6.2.0
+transformers==5.20.2
+huggingface-hub==2.2.0
+tokenizers==0.23.3
+safetensors==0.8.0
+scikit-learn==1.7.2

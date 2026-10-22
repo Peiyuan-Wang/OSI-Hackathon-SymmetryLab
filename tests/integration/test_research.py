@@ -102,7 +102,7 @@ def test_adapter_configuration_fails_closed(monkeypatch):
         OpenAICompatibleClient(config)
     config["base_url"] = "https://example.com/v1"
     monkeypatch.delenv("SYMMETRYLAB_API_KEY", raising=False)
-    with pytest.raises(ValueError, match="environment"):
+    with pytest.raises(ValueError, match="No API key saved"):
         OpenAICompatibleClient(config)
 
 

@@ -1,8 +1,7 @@
 {
-  "base_url": "http://127.0.0.1:15721/v1",
+  "base_url": "https://api.example.com/v1",
   "model": "SET_YOUR_MODEL",
-  "protocol": "responses",
-  "auth_mode": "cc_switch",
+  "protocol": "chat_completions",
   "research_profile": {
     "track": "experiment",
     "material": "L10 MnPt",
@@ -12,5 +11,6 @@
     "papers": "",
     "taste_notes": "",
     "reuse_lessons": true
-  }
+  },
+  "api_key_env": "SYMMETRYLAB_API_KEY"
 }

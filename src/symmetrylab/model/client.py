@@ -1,4 +1,4 @@
-"""Bounded Chat Completions / Responses adapter, including CC Switch routing."""
+"""Bounded Chat Completions / Responses adapter for OpenAI-compatible services."""
 
 import json
 import os
@@ -19,28 +19,23 @@ class OpenAICompatibleClient:
         parsed = urlsplit(url)
         self.local = parsed.hostname in {"127.0.0.1", "localhost", "::1"}
         self.protocol = config.get("protocol", "chat_completions")
-        self.auth_mode = config.get("auth_mode", "environment")
         if self.protocol not in {"chat_completions", "responses"}:
             raise ValueError("unsupported API protocol")
-        if self.auth_mode not in {"environment", "cc_switch"}:
-            raise ValueError("unsupported authentication mode")
         if (not parsed.hostname or parsed.username or parsed.password or parsed.query or parsed.fragment
                 or parsed.scheme not in {"https", "http"}
                 or (parsed.scheme == "http" and not self.local)):
             raise ValueError("base_url requires HTTPS, or HTTP on loopback, with no credentials/query/fragment")
-        if self.auth_mode == "cc_switch" and not self.local:
-            raise ValueError("CC Switch authentication requires a loopback URL")
         self.url = url + ("/responses" if self.protocol == "responses" else "/chat/completions")
         self.model = config["model"]
         if not isinstance(self.model, str) or not self.model.strip() or self.model == "SET_YOUR_MODEL" or len(self.model) > 200:
             raise ValueError("configure a real model identifier before live mode")
-        # This is only a placeholder: CC Switch injects its configured upstream key.
+        # A key saved in the app's Connection page wins; CLI configs may name an environment variable.
         env_name = config.get("api_key_env", "SYMMETRYLAB_API_KEY")
-        if self.auth_mode == "environment" and not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,99}", env_name or ""):
-            raise ValueError("the API-key field expects an environment variable NAME such as SYMMETRYLAB_API_KEY, not the key itself")
-        self.key = "PROXY_MANAGED" if self.auth_mode == "cc_switch" else os.environ.get(env_name)
-        if not self.key:
-            raise ValueError("API key environment variable is not set")
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]{0,99}", env_name or ""):
+            raise ValueError("api_key_env must be an environment variable NAME such as SYMMETRYLAB_API_KEY, not the key itself")
+        self.key = config.get("api_key") or os.environ.get(env_name)
+        if not isinstance(self.key, str) or not self.key.strip():
+            raise ValueError("No API key saved")
         self.timeout = timeout
 
     def complete(self, messages, max_tokens):
@@ -81,6 +76,6 @@ class OpenAICompatibleClient:
         except HTTPError as exc:
             raise RuntimeError(f"model request failed (HTTP {exc.code})") from None
         except (URLError, TimeoutError, OSError):
-            raise RuntimeError("model connection failed or timed out; check the service and routing settings") from None
+            raise RuntimeError("model connection failed or timed out; check the Base URL and network") from None
         except (KeyError, IndexError, TypeError, UnicodeError, json.JSONDecodeError):
             raise RuntimeError("model returned malformed JSON") from None

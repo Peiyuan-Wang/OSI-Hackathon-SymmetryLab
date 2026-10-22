@@ -13,30 +13,20 @@ from symmetrylab.agent_core.profile import research_profile
 from symmetrylab.communication.workbench import render_agent_report
 from symmetrylab.database.workbench import RunStore
 from symmetrylab.model.client import OpenAICompatibleClient
+from symmetrylab.model.connection import ConnectionStore
 from symmetrylab.literature.service import Literature
 
-DEFAULT_CONNECTION = {"base_url": "http://127.0.0.1:15721/v1", "model": "", "protocol": "responses",
-                      "auth_mode": "cc_switch", "api_key_env": "SYMMETRYLAB_API_KEY"}
-CONNECTION_FIELDS = set(DEFAULT_CONNECTION)
-
-
-def connection_config(config):
-    if not isinstance(config, dict) or set(config) - CONNECTION_FIELDS:
-        raise ValueError("only public connection settings are accepted; API keys belong in CC Switch or environment variables")
-    result = dict(DEFAULT_CONNECTION, **config)
-    if any(not isinstance(v, str) or len(v) > 500 for v in result.values()):
-        raise ValueError("invalid connection settings")
-    return result
+CONNECTION_FILE = "connection.json"
 
 
 HINTS = {
-    "API key environment variable is not set": "Export the variable in the same terminal before starting the server (export SYMMETRYLAB_API_KEY=...), then restart it.",
+    "No API key saved": "Open Connection, paste your API key and click Save.",
     "HTTP 401": "The service rejected the key. Check that the key is valid and belongs to this Base URL.",
     "HTTP 403": "The service refused access. Check the key's permissions or account balance.",
     "HTTP 404": "Wrong endpoint. Base URL must end at /v1 (without /responses or /chat/completions), and the protocol must be one the service supports.",
     "HTTP 400": "The service rejected the request. Check the model ID spelling and try the other protocol.",
     "HTTP 429": "Rate limited or out of quota at the provider.",
-    "connection failed or timed out": "The service did not answer. For CC Switch, confirm local routing is enabled on this port; for a remote service, check the URL and network/proxy.",
+    "connection failed or timed out": "The service did not answer. Check the Base URL, your network or proxy, and that the service is online.",
     "returned no text content": "The service answered without text. Try the other protocol (Responses vs Chat Completions).",
     "malformed JSON": "The response was not OpenAI-compatible JSON. Check the Base URL and protocol.",
 }
@@ -50,7 +40,8 @@ def explain(message):
 class Workbench:
     def __init__(self, root, config=None):
         self.store = RunStore(root)
-        self.config = connection_config(config or {})
+        # The connection (including the API key) is saved next to the run data, outside Git.
+        self.connection = ConnectionStore(Path(root).resolve().parent / CONNECTION_FILE, config)
         self.token = secrets.token_urlsafe(32)
         self.lock = Lock()
         self.active = None
@@ -108,7 +99,7 @@ class Workbench:
         if mode not in {"demo", "live"} or not isinstance(goal, str) or not 1 <= len(goal.strip()) <= 4000:
             raise ValueError("select demo/live and enter a research question (1–4000 characters)")
         profile = research_profile(request.get("research_profile"))
-        config = connection_config(request.get("connection", self.config))
+        config = self.connection.client_config()
         limits = limits_from({"limits": request.get("limits", {}), "research_profile": profile})
         client = OpenAICompatibleClient(config) if mode == "live" else None
         style = self.literature.active_style() if request.get("use_style") else None
@@ -120,7 +111,6 @@ class Workbench:
             identifier = uuid4().hex
             self.active = identifier
             self.cancel = Event()
-            self.config = config
             self.snapshots[identifier] = {"run_id": identifier, "goal": goal, "mode": mode, "status": "running", "created_at": "pending", "research_profile": profile}
         def update(state):
             with self.lock:
@@ -160,16 +150,15 @@ class Workbench:
                 removed += 1
         return {"status": "cleared", "removed": removed}
 
-    def probe(self, config):
-        config = connection_config(config)
-        client = OpenAICompatibleClient(config, timeout=60)
+    def probe(self, values):
+        """Test unsaved form values; an empty key field falls back to the saved key."""
+        client = OpenAICompatibleClient(self.connection.client_config(values), timeout=60)
         with self.lock:
             if self.active or self.probing:
                 raise ValueError("wait for the current run or test to finish")
             self.probing = True
         try:
             response = client.complete([{"role": "user", "content": "Reply with OK only."}], 64)
-            self.config = config
             return {"status": "connected", "model": response["model"], "protocol": config["protocol"],
                     "message": "The service returned a valid text response. This test used a real model request."}
         finally:
@@ -190,7 +179,7 @@ def make_server(port=8787, root="data/workbench", config=None):
             origin = self.headers.get("Origin")
             if host not in allowed or (origin and origin != "http://" + host):
                 return False
-            public_navigation = (not mutation and self.command == "GET" and urlsplit(self.path).path in {"/", "/experiment", "/papers"}
+            public_navigation = (not mutation and self.command == "GET" and urlsplit(self.path).path in {"/", "/experiment", "/papers", "/connection"}
                                  and self.headers.get("Sec-Fetch-Mode") == "navigate" and self.headers.get("Sec-Fetch-Dest") == "document")
             if self.headers.get("Sec-Fetch-Site") == "cross-site" and not public_navigation:
                 return False
@@ -218,12 +207,14 @@ def make_server(port=8787, root="data/workbench", config=None):
                 return self.send({"error": "local same-origin access required"}, 403)
             parts = urlsplit(self.path)
             routes = {"/": ("index.html", "text/html"), "/experiment": ("index.html", "text/html"), "/app.js": ("app.js", "text/javascript"), "/style.css": ("style.css", "text/css"),
-                      "/papers": ("papers.html", "text/html"), "/papers.js": ("papers.js", "text/javascript")}
+                      "/papers": ("papers.html", "text/html"), "/papers.js": ("papers.js", "text/javascript"),
+                      "/connection": ("connection.html", "text/html"), "/connection.js": ("connection.js", "text/javascript"),
+                      "/desktop.js": ("desktop.js", "text/javascript")}
             if parts.path in routes:
                 name, mime = routes[parts.path]
                 return self.send((static / name).read_bytes(), kind=mime + "; charset=utf-8")
             if parts.path == "/api/bootstrap":
-                return self.send({"token": app.token, "connection": app.config, "runs": app.listing()})
+                return self.send({"token": app.token, "connection": app.connection.public(), "runs": app.listing()})
             if parts.path == "/api/runs":
                 return self.send(app.listing())
             if parts.path == "/api/literature":
@@ -258,6 +249,9 @@ def make_server(port=8787, root="data/workbench", config=None):
                     return self.send(app.start(data), 202)
                 if self.path == "/api/connection/test":
                     return self.send(app.probe(data))
+                if self.path == "/api/connection":
+                    values = {k: v for k, v in data.items() if k in ("base_url", "model", "protocol", "api_key")}
+                    return self.send(app.connection.save(values, forget_key=bool(data.get("forget_key"))))
                 if self.path == "/api/runs/clear":
                     return self.send(app.clear(data.get("track")))
                 if self.path.startswith("/api/literature/"):
@@ -312,7 +306,7 @@ def make_server(port=8787, root="data/workbench", config=None):
                 # Project-authored messages never contain keys or response bodies; show the actual cause.
                 return self.send({"error": explain(str(exc))}, 400)
             except (OSError, KeyError, TypeError):
-                return self.send({"error": "Request failed. Check the model ID, Base URL, selected protocol and local routing/key configuration; only one run or test can be active."}, 400)
+                return self.send({"error": "Request failed. Check the model ID, Base URL, protocol and API key on the Connection page; only one run or test can be active."}, 400)
     server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
     server.app = app
     return server

@@ -14,4 +14,4 @@
 3. Show the plan and the first hypothesis, then the certified inversion counterexample.
 4. Show retained feedback, the revised hypothesis and the translation obstruction.
 5. Inspect exact candidate data; switch the report audience and download Markdown/JSON.
-6. Expand **Model connection** to show the CC Switch preset. For an actual live demo, first enable local Codex routing, enter a supported model ID and pass **Test connection**. Then switch to **Live model research**. Do not describe the offline demonstration as real model evidence.
+6. Open **Connection** in the sidebar. For an actual live demo, enter the Base URL, model ID and API key, pass **Test connection** and **Save**. Then switch to **Live model research**. Do not describe the offline demonstration as real model evidence.

@@ -1,7 +1,7 @@
 'use strict';
 const $ = id => document.getElementById(id);
 const track = location.pathname === '/experiment' ? 'experiment' : 'theory';
-let token = '', selected = null, current = null, polling = false, reportVersion = '', activeRun = null, renderedVersion = '';
+let connectionInfo = {ready:false}, token = '', selected = null, current = null, polling = false, reportVersion = '', activeRun = null, renderedVersion = '';
 function el(tag, text, className) { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (className) e.className = className; return e; }
 function notice(text) { $('notice').textContent = text; $('notice').hidden = !text; }
 async function api(path, data, retried = false) {
@@ -14,25 +14,13 @@ async function api(path, data, retried = false) {
   }
   if (!response.ok) throw new Error(response.status === 403 ? 'Local request token expired (server restarted). Reload the page.' : (value.error || 'Request failed')); return value;
 }
-function connection() { return {base_url:$('base-url').value.trim(), model:$('model').value.trim(), protocol:$('protocol').value, auth_mode:$('preset').value === 'cc_switch' ? 'cc_switch' : 'environment', api_key_env:$('key-env').value.trim()}; }
-function connectionView() {
-  const cc = $('preset').value === 'cc_switch'; $('key-field').hidden = cc;
-  $('connection-help').textContent = cc ? 'Enable Codex routing in CC Switch and enter a supported model ID. CC Switch supplies the upstream key.' : 'Set the named environment variable before starting this server. Never paste API keys here. Base URL excludes /responses or /chat/completions.';
-}
-$('preset').addEventListener('change', () => { if ($('preset').value === 'cc_switch') { $('base-url').value = 'http://127.0.0.1:15721/v1'; $('protocol').value = 'responses'; } else { $('base-url').value = ''; $('protocol').value = 'chat_completions'; } connectionView(); });
-$('mode').addEventListener('change', () => { const live = $('mode').value === 'live'; $('mode-note').textContent = live ? 'The model plans, generates candidates and chooses tools from observed feedback.' : 'Scripted walkthrough with exact calculations. Live mode uses your brief and public source retrieval.'; if (live) $('settings').open = true; });
-$('test').onclick = async () => {
-  $('test').disabled = true; $('connection-status').textContent = 'Testing service…';
-  try { const result = await api('/api/connection/test', connection()); $('connection-status').textContent = `Connected · ${result.model} · real request succeeded`; }
-  catch (error) { $('connection-status').textContent = error.message; }
-  finally { $('test').disabled = Boolean(activeRun); }
-};
+$('mode').addEventListener('change', () => { const live = $('mode').value === 'live'; $('mode-note').textContent = live ? 'The model plans, generates candidates and chooses tools from observed feedback.' : 'Scripted walkthrough with exact calculations. Live mode uses your brief and public source retrieval.'; if (live && !connectionInfo.ready) notice('Live mode needs a saved connection. Open Connection settings first.'); });
 $('start').onclick = async () => {
   notice(''); $('start').disabled = true;
   try {
-    if ($('mode').value === 'live' && !$('model').value.trim()) throw new Error('Enter your provider’s model ID in Model connection before starting live research.');
+    if ($('mode').value === 'live' && !connectionInfo.ready) throw new Error('Live research needs a saved model connection. Open Connection settings, enter the Base URL, model ID and API key, then Save.');
     const turns = Number($('calls').value); if (!Number.isInteger(turns) || turns < 1 || turns > 50) throw new Error('Model-turn budget must be between 1 and 50.');
-    const result = await api('/api/runs', {goal:$('goal').value, research_profile:researchProfile(), mode:$('mode').value, connection:connection(), limits:{max_model_calls:turns}, use_style:$('use-style').checked});
+    const result = await api('/api/runs', {goal:$('goal').value, research_profile:researchProfile(), mode:$('mode').value, limits:{max_model_calls:turns}, use_style:$('use-style').checked});
     selected = result.run_id; activeRun = selected; reportVersion = ''; await refresh();
   } catch (error) { notice(error.message); $('start').disabled = Boolean(activeRun); }
 };
@@ -89,6 +77,7 @@ async function loadReport() {
   if (runId !== selected || audience !== $('audience').value) return;
   if (response.ok) $('report').replaceChildren(...markdown(text));
   $('download-md').href = url + '&download=1'; $('download-json').href = `/api/runs/${selected}/download`;
+  $('download-md').dataset.filename = `symmetrylab_${audience}.md`; $('download-json').dataset.filename = 'symmetrylab_result.json';
   $('download-md').classList.remove('disabled'); $('download-json').classList.remove('disabled');
 }
 $('clear-history').onclick = async () => {
@@ -127,7 +116,7 @@ async function refresh() {
   try {
     const allRuns = await api('/api/runs'); activeRun = allRuns.find(r=>r.status==='running')?.run_id || null;
     const runs = allRuns.filter(r => (r.track === 'experiment' ? 'experiment' : 'theory') === track);
-    $('start').disabled = Boolean(activeRun); $('test').disabled = Boolean(activeRun);
+    $('start').disabled = Boolean(activeRun);
     if (!selected && runs.length) selected = runs[0].run_id;
     if (runs.length) $('history').replaceChildren(...runs.map(run => { const button = el('button',undefined,run.run_id===selected?'selected':''); button.append(el('strong',run.goal),el('small',`${run.mode.toUpperCase()} · ${run.status.replaceAll('_',' ')}`)); button.onclick = () => { selected=run.run_id; reportVersion=''; notice(''); refresh(); }; return button; }));
     if (selected) render(await api(`/api/runs/${selected}`));
@@ -256,13 +245,18 @@ function markdown(text) {
   }
   return out;
 }
+function showConnection(c) {
+  connectionInfo = c;
+  let host = ''; try { host = new URL(c.base_url).host; } catch {}
+  $('connection-summary').textContent = c.ready ? `${c.model} · ${host} · ${c.protocol === 'responses' ? 'Responses' : 'Chat Completions'} · key ${c.key_source === 'saved' ? 'saved' : 'from environment'}`
+    : (c.base_url || c.model ? 'Connection incomplete — add the missing Base URL, model ID or API key' : 'Model connection not configured — needed for Live model research only');
+  $('connection-dot').classList.toggle('off', !c.ready);
+}
 setupTrack();
 
 (async () => {
   try {
     const boot = await api('/api/bootstrap'); token = boot.token;
-    $('base-url').value=boot.connection.base_url; $('model').value=boot.connection.model; $('protocol').value=boot.connection.protocol;
-    $('preset').value=boot.connection.auth_mode==='cc_switch'?'cc_switch':'custom'; $('key-env').value=boot.connection.api_key_env;
-    connectionView(); await refresh(); setInterval(refresh,1500);
+    showConnection(boot.connection); await refresh(); setInterval(refresh,1500);
   } catch(e) { notice(e.message); }
 })();

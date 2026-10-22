@@ -12,7 +12,7 @@ Paper input accepts pasted text or a user-selected .txt/.md reading list. Full P
 
 Direct-provider API keys are read from environment variables. Only public connection settings reach the browser or configuration files; keys are not written to source or application logs. The user's explicitly authorized desktop-file launcher is local and outside the repository. Portable installations use the environment-variable workflow.
 
-CC Switch mode uses an explicit loopback URL and placeholder authentication; the proxy manages the real provider key. SymmetryLab does not inspect CC Switch databases or Codex authentication files. Plain HTTP is accepted only for loopback connections; remote providers require HTTPS. Redirects are rejected. Local routing bypasses unrelated system HTTP proxies.
+The API key entered on the Connection page is saved in `connection.json` beside the run data with permission 0600. It is not encrypted; anyone who can read your account files can read it. It is never returned to the interface or written to run records. Plain HTTP is accepted only for loopback connections; remote providers require HTTPS. Redirects are rejected. Local routing bypasses unrelated system HTTP proxies.
 
 The workbench binds to 127.0.0.1, validates Host and Origin, rejects cross-site API requests and requires a per-server request token for mutations. Top-level navigation to the two HTML pages is permitted. Static assets are local; model content is rendered as text. The application has no public deployment or multi-user authentication.
 

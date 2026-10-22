@@ -19,7 +19,7 @@ Current version: **0.3.0 discovery preview**, 2026-10-22 (Asia/Shanghai). Not ye
 
 ## Checks completed
 
-- Full regression suite: **103 passed**, including local HTTP navigation, origin/token protection, two workspaces, human preference endpoint and speculative-action rejection.
+- Full regression suite: **108 passed**, including local HTTP navigation, origin/token protection, two workspaces, human preference endpoint and speculative-action rejection.
 - Python compilation, JavaScript syntax check and Git whitespace check passed.
 - New deterministic discovery seed suite: **12/12 correct**, zero model calls. This is not a taste or improvement evaluation.
 - Both offline workflows complete with actual exact tools. MnPt produces four conditional calculations (three when a lesson is recalled) and an experiment-design record; theory produces two certified instances, two proposals and a provisional taste profile when context is supplied.
@@ -54,6 +54,12 @@ Current version: **0.3.0 discovery preview**, 2026-10-22 (Asia/Shanghai). Not ye
 
 - New `/papers` workspace: arXiv retrieval (physics categories), PhysBERT or lexicon embeddings, Newspaper-style anchored multi-interest ranking with attention routing and reversible feedback, emerging-interest drift, and a deterministic researcher voice profile injected as a separate system message in live runs. See [paper_survey.md](paper_survey.md).
 - Verified: 103 tests; end-to-end browser run against live arXiv with PhysBERT (103 candidates, votes re-rank, profile built). Not verified: effect of the voice profile on a real model's prose.
+
+## Desktop app and connection page (2026-10-22)
+
+- Native window via pywebview 6.2.1 around the unchanged interface; PyInstaller spec and `scripts/build_mac_app.sh` (dependencies, tests, PhysBERT, `.app`). Per-user data in `~/Library/Application Support/SymmetryLab`.
+- CC Switch support removed. New **Connection** page: Base URL, model ID, protocol and API key, saved in a 0600 file; the key is never returned to the interface or written to runs. The research page shows a one-line connection status.
+- Verified: 108 tests; frozen Linux builds (lite and with PyTorch) driven end to end. Not verified: the macOS `.app` (must be built on the Mac).
 
 ## Scientific and implementation limits
 
