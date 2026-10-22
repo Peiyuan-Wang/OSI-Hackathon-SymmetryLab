@@ -41,7 +41,8 @@ Windows 10/11 x64 needs Microsoft Edge WebView2 Runtime; install it from Microso
 WebView2 download page if absent. The preview is unsigned.
 
 For Apple Silicon Macs, extract `SymmetryLab-macos-arm64.zip` and open `SymmetryLab.app`.
-This architecture does not run on Intel Macs; build locally on Intel using the existing script.
+The release is ad-hoc signed but not notarized, so macOS may require right-click → Open on
+first launch. This architecture does not run on Intel Macs; build locally on Intel using the existing script.
 The workflow archives the app with `ditto` to preserve its executable permissions.
 
 Build on Windows with Python 3.12 installed:

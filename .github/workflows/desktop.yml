@@ -91,6 +91,6 @@ jobs:
           body: |
             Portable desktop packages include the verified SSG Reciprocal Offline 0.1.5 catalog.
             Windows: extract the ZIP and double-click `SymmetryLab.exe` (WebView2 Runtime required).
-            macOS: extract the ZIP and open `SymmetryLab.app` (Apple Silicon).
+            macOS: extract the ZIP and open `SymmetryLab.app` (Apple Silicon; unsigned, so first launch may require right-click → Open).
             Each ZIP has a companion SHA-256 file. Optional PhysBERT is not included in these lite builds.
           files: release-assets/*
