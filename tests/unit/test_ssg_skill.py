@@ -106,7 +106,8 @@ def test_frozen_catalog_candidates_cover_mac_and_windows(monkeypatch, tmp_path):
     monkeypatch.setattr(sys, 'frozen', True, raising=False)
     monkeypatch.setattr(sys, 'executable', str(exe))
     monkeypatch.setattr(sys, '_MEIPASS', str(tmp_path / 'SymmetryLab.app' / 'Contents' / 'Frameworks'), raising=False)
-    found = [str(p) for p in ssg.catalog_candidates()]
+    # Normalize separators so the same assertion runs on Windows and macOS.
+    found = [p.as_posix() for p in ssg.catalog_candidates()]
     assert any('Contents/Frameworks/data/ssg' in p for p in found) and any('Contents/Resources/data/ssg' in p for p in found)
     target = tmp_path / 'SymmetryLab.app' / 'Contents' / 'Resources' / 'data' / 'ssg' / ssg.CATALOG_NAME
     target.parent.mkdir(parents=True); target.write_bytes(b'')
