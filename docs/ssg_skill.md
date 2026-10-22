@@ -4,7 +4,7 @@ The application exposes `list_skills`, `read_skill`, and `call_skill` through th
 
 ## Installed assets
 
-The authorized SQLite 0.1.5 catalog and Wolfram paclet 0.12.1 are copied unchanged into `data/ssg/`. `manifest.json` contains SHA-256 hashes and sizes. The catalog contains 67,475 stored SSG labels. Original manuscripts were not copied. Local scientific assets remain excluded from Git by the existing data rules; publishing them requires a separate distribution decision.
+The authorized SQLite 0.1.5 catalog and Wolfram paclet 0.12.1 are copied unchanged into `data/ssg/`. `manifest.json` contains SHA-256 hashes and sizes. The catalog contains 67,475 stored SSG labels. Original manuscripts were not copied. The SQLite catalog is distributed as a separate `ssg-data-v0.1.5` GitHub Release asset, downloaded and hash-checked by desktop builds; it remains excluded from Git. The Wolfram paclet is not required at runtime and is not included in desktop packages.
 
 The runtime uses the original SQLite schema 3, with read-only connections and parameterized queries. It does not convert or flatten the scientific data into a new invented schema. A source checkout automatically finds `data/ssg/SSGReciprocalOffline-0.1.5.sqlite`. Set `SYMMETRYLAB_SSG_CATALOG` to select another authorized local copy. Restart the application after changing this environment variable.
 
@@ -34,7 +34,7 @@ The antiunitary sign is already included in the stored reciprocal matrix. BNS co
 
 ## Packaging
 
-The desktop builds (`scripts/build_mac_app.sh`, `scripts/build_windows_app.ps1`) bundle the SQLite catalog by default after checking its SHA-256 against `data/ssg/manifest.json`; a missing or altered file stops the build. `--no-ssg` / `-NoSsg` (or `SYMMETRYLAB_BUNDLE_SSG=0`) builds without it. The built app is smoke-tested with `--require-ssg`: record count 67,475 and `verify_group` on N143.10.1 must pass inside the frozen app. The paclet is not bundled (not needed by the Python runtime). The catalog is never committed to Git; share an app that contains it only where its licence allows.
+The desktop builds (`scripts/build_mac_app.sh`, `scripts/build_windows_app.ps1`) download and bundle the SQLite catalog by default after checking its SHA-256 against `data/ssg/manifest.json`; a missing or altered file stops the build. `--no-ssg` / `-NoSsg` (or `SYMMETRYLAB_BUNDLE_SSG=0`) builds without it. The built app is smoke-tested with `--require-ssg`: record count 67,475 and `verify_group` on N143.10.1 must pass inside the frozen app. The paclet is not bundled (not needed by the Python runtime). The catalog is never committed to Git; distribute the data asset and app only where its licence allows.
 
 ## Offline walkthrough
 

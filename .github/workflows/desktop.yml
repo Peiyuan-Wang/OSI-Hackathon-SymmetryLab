@@ -2,6 +2,7 @@ name: Desktop packages
 on:
   push:
     branches: [main, review-fixes]
+    tags: ['v*']
     paths-ignore: ['docs/**', 'README.md']
   workflow_dispatch:
     inputs:
@@ -13,6 +14,8 @@ permissions:
   contents: read
 jobs:
   package:
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -39,6 +42,8 @@ jobs:
       - name: Install optional physics dependencies
         if: inputs.full
         run: python -m pip install -r requirements-physics.lock
+      - name: Download and verify SSG catalog
+        run: python scripts/fetch_ssg_catalog.py
       - name: Regression checks
         run: |
           python -m compileall -q src tests
@@ -46,7 +51,7 @@ jobs:
       - name: Freeze desktop app
         run: python -m PyInstaller --noconfirm --clean --distpath dist --workpath build/pyinstaller packaging/SymmetryLab.spec
       - name: Exercise frozen app
-        run: python scripts/check_frozen.py "${{ matrix.binary }}"
+        run: python scripts/check_frozen.py "${{ matrix.binary }}" --require-ssg
       - name: Archive Windows app
         if: runner.os == 'Windows'
         shell: pwsh
@@ -67,3 +72,25 @@ jobs:
             dist/*.sha256
           if-no-files-found: error
           retention-days: 30
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: package
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+      - uses: softprops/action-gh-release@v2
+        with:
+          name: SymmetryLab ${{ github.ref_name }}
+          generate_release_notes: true
+          body: |
+            Portable desktop packages include the verified SSG Reciprocal Offline 0.1.5 catalog.
+            Windows: extract the ZIP and double-click `SymmetryLab.exe` (WebView2 Runtime required).
+            macOS: extract the ZIP and open `SymmetryLab.app` (Apple Silicon).
+            Each ZIP has a companion SHA-256 file. Optional PhysBERT is not included in these lite builds.
+          files: release-assets/*

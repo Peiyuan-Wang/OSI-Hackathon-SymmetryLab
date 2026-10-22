@@ -32,7 +32,9 @@ Frozen Linux builds (lite and full) were started and driven in a browser: Connec
 
 ## Windows portable app and automated packages
 
-Download the matching package from the repository's **Actions → Desktop packages** run.
+Download the matching ZIP from the latest GitHub Release. Each package includes the
+verified SSG catalog; builds fetch it from the `ssg-data-v0.1.5` data release and check
+its SHA-256 before freezing the app.
 The Windows artifact contains a ZIP: extract it completely, then double-click
 `SymmetryLab/SymmetryLab.exe`. Keep `_internal` beside the executable. Python is bundled.
 Windows 10/11 x64 needs Microsoft Edge WebView2 Runtime; install it from Microsoft's
@@ -51,10 +53,12 @@ powershell -ExecutionPolicy Bypass -File scripts/build_windows_app.ps1 -Full
 ```
 
 Pushes to main/review-fixes build the lightweight edition on native Windows and macOS runners.
+Pushing a `v*` tag also publishes both tested ZIPs and their SHA-256 files as a GitHub Release.
 Manual workflow dispatch can include PhysBERT dependencies. Lite builds retain exact research,
 model connection, local UI and lexical paper ranking; PhysBERT requires a full build.
-Packages contain only code, interface assets and dependencies. They exclude API keys, local
-settings, paper history and research records. Configure Connection after first launch.
+Packages contain code, interface assets, dependencies and the read-only SSG catalog. They
+exclude API keys, local settings, paper history and research records. Configure Connection after
+first launch.
 Windows user data lives in `%APPDATA%\SymmetryLab`. Its saved key is plaintext protected by the account folder's inherited Windows permissions; POSIX mode 0600 applies only on Unix-like systems.
 
 The workflow runs regression checks and launches each frozen executable with an isolated

@@ -1,6 +1,6 @@
 # Implementation Status
 
-Current version: **0.3.0 discovery preview**, 2026-10-22 (Asia/Shanghai). Not yet published as a release.
+Current version: **0.3.1 discovery preview**, 2026-10-23 (Asia/Shanghai). Release builds are produced by the `v*` tag workflow after both platform packages pass their SSG-required smoke checks.
 
 ## Implemented in this revision
 

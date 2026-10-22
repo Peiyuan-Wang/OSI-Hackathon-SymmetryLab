@@ -6,7 +6,7 @@
 
 SymmetryLab supports two research workflows: experimental goals for a named material, and theory exploration guided by selected papers and interests. Exact tools check bounded models; source-linked interpretations, research taste, material assignments and experimental proposals retain their own verification status.
 
-The **v0.3 preview** preserves the original theory layout and adds a matching experimental workspace for **L10 MnPt Neel-axis detection**. It includes public metadata retrieval, conditional orientation calculations, counterexample search, paper-linked taste profiles, human preference feedback and rechecked cross-run strategies. Live model research requires a configured provider. Offline walkthroughs use scripted decisions.
+The **v0.3.1 preview** preserves the original theory layout and adds a matching experimental workspace for **L10 MnPt Neel-axis detection**. It includes public metadata retrieval, conditional orientation calculations, counterexample search, paper-linked taste profiles, human preference feedback and rechecked cross-run strategies. Live model research requires a configured provider. Offline walkthroughs use scripted decisions.
 
 Read [the discovery benchmark and RSI design](docs/design/discovery_benchmark_rsi.md) for scientific definitions, source boundaries, the benchmark collection plan, controlled experiments and remaining work. This is a research prototype; sample-specific magnetic structure, growth feasibility, quantitative experimental signals and novel discoveries are not established.
 
@@ -20,7 +20,7 @@ Build locally on macOS:
 scripts/build_mac_app.sh && open dist/SymmetryLab.app
 ```
 
-Installs all dependencies into `.venv`, runs the tests and builds a native app with the same layout, including the SSG catalog (hash-checked against `data/ssg/manifest.json`; the build stops if it is missing). The finished app is smoke-tested. Add `--lite` to leave out PyTorch/PhysBERT, `--no-ssg` to leave out the catalog. Details: [Desktop app](docs/desktop_app.md).
+Installs all dependencies into `.venv`, runs the tests and builds a native app with the same layout, including the SSG catalog (downloaded and hash-checked against `data/ssg/manifest.json`). The finished app is smoke-tested. Add `--lite` to leave out PyTorch/PhysBERT, `--no-ssg` to leave out the catalog. Details: [Desktop app](docs/desktop_app.md).
 
 ## Installation
 
@@ -153,4 +153,8 @@ tests/integration/         Full loop, replay, budgets, and mocked models
 
 Developers should start with [AGENTS.md](AGENTS.md). The [implementation plan](docs/implementation_plan.md), [architecture](docs/architecture.md), [experiment protocol](docs/experiments.md), and [privacy rules](docs/privacy.md) describe the intended scope and roadmap.
 
-The gauge benchmark cases are newly constructed abstract toys. The SSG Reciprocal Offline catalog 0.1.5 (67,475 records) is connected read-only as a model skill and bundled into the desktop app; it is a local, authorized asset kept out of Git (see [SSG skill](docs/ssg_skill.md)). Private papers and Mathematica code are not connected, and the Wolfram paclet is not executed. Project-authored documentation, prompts, CLI text, and newly generated reports use English.
+The [Research Workflow and Interest Algorithm](docs/algorithm_flowchart.md) diagrams
+show how Theory, Experiment, and Papers produce personalized research reports,
+and how attention-routed feedback adapts interests and measures drift.
+
+The gauge benchmark cases are newly constructed abstract toys. The SSG Reciprocal Offline catalog 0.1.5 (67,475 records) is connected read-only as a model skill and bundled into the desktop app; its separate data release is pinned and verified by SHA-256, while the database file stays out of Git (see [SSG skill](docs/ssg_skill.md)). Private papers and Mathematica code are not connected, and the Wolfram paclet is not executed. Project-authored documentation, prompts, CLI text, and newly generated reports use English.

@@ -46,7 +46,8 @@ fi
 if [[ $SSG == 1 ]]; then
   echo "==> Checking SSG catalog"
   CATALOG=data/ssg/SSGReciprocalOffline-0.1.5.sqlite
-  [[ -f "$CATALOG" ]] || { echo "Missing $CATALOG. Copy the authorized catalog there, or build with --no-ssg."; exit 2; }
+  [[ -f "$CATALOG" ]] || $V scripts/fetch_ssg_catalog.py
+  [[ -f "$CATALOG" ]] || { echo "Missing $CATALOG after download. Build with --no-ssg to omit it."; exit 2; }
   EXPECTED=$($V -c "import json;print(next(f['sha256'] for f in json.load(open('data/ssg/manifest.json'))['files'] if f['file'].endswith('.sqlite')))")
   [[ "$(shasum -a 256 "$CATALOG" | cut -d' ' -f1)" == "$EXPECTED" ]] || { echo "SSG catalog hash mismatch with data/ssg/manifest.json"; exit 2; }
 fi

@@ -12,7 +12,8 @@ $env:SYMMETRYLAB_LITE = if ($Full) { '0' } else { '1' }
 $env:SYMMETRYLAB_BUNDLE_SSG = if ($NoSsg) { '0' } else { '1' }
 if (!$NoSsg) {
   $catalog = 'data/ssg/SSGReciprocalOffline-0.1.5.sqlite'
-  if (!(Test-Path $catalog)) { throw "Missing $catalog. Copy the authorized catalog there, or build with -NoSsg." }
+  if (!(Test-Path $catalog)) { Invoke-Checked $python scripts/fetch_ssg_catalog.py }
+  if (!(Test-Path $catalog)) { throw "Missing $catalog after download. Build with -NoSsg to omit it." }
   $expected = ((Get-Content 'data/ssg/manifest.json' -Raw | ConvertFrom-Json).files | Where-Object { $_.file -like '*.sqlite' }).sha256
   if ((Get-FileHash $catalog -Algorithm SHA256).Hash.ToLower() -ne $expected) { throw 'SSG catalog hash mismatch with data/ssg/manifest.json' }
 }

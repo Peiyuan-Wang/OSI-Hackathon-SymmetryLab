@@ -1,33 +1,88 @@
 # Architecture and Interfaces
 
-Status: v0.2 includes a graphical workbench and an iterative model controller. Protocol adapters and adaptive control pass mock tests; no real provider request has yet been validated.
+Status: **v0.3.1 discovery preview** (2026-10-23, Asia/Shanghai). See the
+[algorithm map](algorithm_flowchart.md) for the research workflows, personalization,
+and attention-routed interest adaptation.
+
+## Runtime shape
 
 ```text
-CLI → agent_core → model protocol / verifier / memory
-                 → observability → data/<run_id>/trace.jsonl
-                 → communication → Three audience reports
-CLI → evaluation → verifier → Independent certificate check
+CLI ─┐
+    ├─> agent_core/workbench ─> model adapter ─> one bounded JSON action per turn
+Web ┘                           │
+                                ├─> registered research tools ─> exact verifier / SSG skill
+                                ├─> bounded public-source adapters
+                                ├─> scoped memory and user preference context
+                                └─> database state + JSONL trace + audience reports
+
+CLI verify/evaluate ─> verifier ─> independent certificate checker
+Paper survey ─> arXiv/Crossref + local encoder/ranker/profile storage
 ```
 
-The module boundaries follow Newspaper. The model module provides replaceable OpenAI-compatible HTTP communication. The verifier has no dependency on models, prompts, or experimental labels. Registered research tools and local run persistence are implemented. MCP remains an extension boundary.
+## Module responsibilities
 
-`validate_case` and `check_group_relations` return input and relation statuses. `solve_gauge_equivalence(case, target_q=None, budget=None)` returns a classification and evidence. Supply target_q as a complete list of vectors in operations order; the target action is also checked for validity.
+| Area | Responsibility |
+|---|---|
+| `agent_core` | Run state machine, research profile, action validation, budgets, observations, synthesis and optional writing pass |
+| `model` | Replaceable OpenAI-compatible client plus explicitly labeled simulated offline policies |
+| `tools` / `skills` | Bounded data-only operations; dispatches legacy gauge, material discovery and SSG catalog calls |
+| `verifier` | Exact rational group/action checks, modular common-gauge solver, conditional orientation kernels and independent certificate checks |
+| `database` | Local run persistence and read-only access to the optional SSG catalog |
+| `memory` | Scoped retrieval of independently rechecked computational lessons and context-matched human preferences |
+| `communication` | Deterministic audience reports, checked key findings and explicit evidence/interpretation boundaries |
+| `observability` | Append-only JSONL run events and evidence hashes |
+| `evaluation` | Frozen affine and discovery seed suites; labels are independent of the research model |
+| `literature` | arXiv/Crossref retrieval, encoder vectors, multi-interest ranking, feedback and separate writing context |
+| `web` / `desktop` | Loopback UI/API or native window; neither contains mathematical labels |
 
-`verify_certificate` does not call the main solver. It directly checks fractional solutions and integer obstructions. Exhaustive evidence is cross-checked using an independent complete grid whose denominator bound comes from integer minors. Exceeding the verification budget returns false.
+The verifier has no dependency on prompts, model outputs, or benchmark labels. Model
+content is data and can request only registered tools. The SSG catalog path is selected
+by application configuration, never by model-generated arguments. MCP remains a future
+extension boundary.
 
-`find_counterexample` supports two allowlisted propositions over an explicitly supplied finite domain. `run_research` records state transitions, input hashes, tool results, lessons, and reports. Template-based revision is a controlled workflow; an empirical learning benefit has not been established.
+## Research execution
 
-Run artifacts are written to a new `data/<run_id>/` directory. Nonempty output directories are rejected. Failures produce a FAILED event. Completed results can be replayed, but automatic resumption from an intermediate model call is not implemented.
+`run_agent` initializes a bounded state, recalls eligible evidence, then repeats: send the
+current state to the selected policy; parse only the first JSON action; validate it; run a
+registered tool if requested; return the observation on the next turn. The supported
+actions are `plan`, `hypothesis`, `tool`, and `finish`. Demo and live policies share the
+same controller. The discovery profile selects theory or experiment contracts; an omitted
+profile preserves the legacy affine workflow. Budgets, cancellation and malformed-action
+limits are enforced by the controller.
 
-All newly generated text is English. Reports use the `_en.md` suffix. A legacy result's canonical executable predicate can be rendered in English without modifying its frozen payload or evidence hash.
+The legacy `demo` command also retains a smaller `run_research` path for finite supplied
+cases and two whitelisted propositions. It supports scripted, constrained live, and
+evidence-checked replay modes; this is distinct from the iterative `research`/workbench
+controller.
 
-## Workbench path
+## Mathematical interfaces and evidence
 
-```text
-Browser → loopback web server → agent_core/workbench
-                              → model/client → OpenAI-compatible service
-                              → tools/research → verifier → independent certificate
-                              → database → state, trace, reports
-```
+- `validate_case` checks schema and supported scope; `check_group_relations` exactly
+  evaluates linear, sign and affine relators before classification.
+- `solve_gauge_equivalence(case, target_q=None, budget=None)` solves one shared modular
+  system for all generators and returns a solution or obstruction/exhaustion evidence.
+- `verify_certificate` is independent of the solver implementation. It validates input
+  hashes and relations, substitutes exact witnesses, and independently checks exhaustive
+  nonexistence within a separate verification budget.
+- Discovery kernels calculate director invariance and collinear neutron orientation
+  factors from rational Cartesian inputs. Their results remain conditional and do not
+  establish material symmetry, reciprocal-lattice reflections, energy stability or
+  experiment feasibility.
+- `momentum_orbit` and `verify_group` operate on stored graded reciprocal SSG records;
+  they do not establish a material assignment or recompute continuous specializations.
 
-The model emits one JSON action per turn. It receives tool observations and counterexample lessons before selecting another action. Both the simulated policy and live adapter use the same controller and tools. The server owns credentials, generated run identifiers, cancellation and same-origin checks. See [agent workbench](agent_workbench.md).
+All mathematical inputs use exact integers/fraction strings. Invalid, inconsistent,
+unsupported and budget-exhausted inputs remain distinct outcomes; none is silently
+reclassified as a valid nontrivial case.
+
+## Persistence and reporting
+
+Each run writes a state snapshot, `trace.jsonl`, a frozen result, source and calculation
+provenance, an evidence hash, metrics, and researcher/student/general reports. The local
+web workbench owns credentials, generated run IDs, cancellation and same-origin/request
+token checks. The optional writing call runs after research with no tools, receives an
+immutable checked-claim ledger, and cannot change certificates; rejected output leaves the
+original synthesis intact. Hashes are integrity aids, not signatures or proof of novelty.
+
+The SSG database and user literature/profile vectors live in local data storage and are
+excluded from ordinary Git tracking. The SSG integration reads its catalog read-only.

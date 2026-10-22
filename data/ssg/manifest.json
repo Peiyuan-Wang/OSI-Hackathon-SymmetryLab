@@ -1,0 +1,15 @@
+{
+  "files": [
+    {
+      "file": "SSGReciprocalOffline-0.1.5.sqlite",
+      "bytes": 333430784,
+      "sha256": "72a371fe1d1e607c40a237d4788cfd2b5af11c06a953cafa32633c07eb25bf92",
+      "download_url": "https://github.com/Peiyuan-Wang/OSI-Hackathon-SymmetryLab/releases/download/ssg-data-v0.1.5/SSGReciprocalOffline-0.1.5.sqlite"
+    },
+    {
+      "file": "SSGReciprocalDatabase-0.12.1.paclet",
+      "bytes": 19930968,
+      "sha256": "0ff9ba9518db7c980c873174cf47e33b1a3dae57d401feb946770153e5dccba6"
+    }
+  ]
+}

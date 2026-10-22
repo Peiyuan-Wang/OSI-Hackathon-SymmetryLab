@@ -12,6 +12,9 @@ dist/
 !.env.example
 data/*
 !data/.gitkeep
+!data/ssg/
+data/ssg/*
+!data/ssg/manifest.json
 *.sqlite*
 *.db
 *.log
