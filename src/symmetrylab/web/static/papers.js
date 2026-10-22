@@ -30,9 +30,23 @@ $('add-sample').onclick = async () => {
 };
 
 $('save').onclick = () => act('/api/literature/profile', profile(), 'Resolving your papers…');
+async function saveSources() {
+  const data = {sources:$('search-sources').value.split(','), token:$('bond-token').value.trim()};
+  const ok = await act('/api/literature/sources', data);
+  if (ok) $('bond-token').value = '';
+  return ok;
+}
+$('save-sources').onclick = saveSources;
+$('test-bond').onclick = async () => {
+  if (await saveSources()) await act('/api/literature/bond-test', {}, 'Calling Bond list_sources…');
+};
+$('forget-bond').onclick = async () => {
+  if (await act('/api/literature/sources', {sources:$('search-sources').value.split(','), forget_token:true})) $('bond-token').value = '';
+};
 $('search').onclick = async () => {
+  if (!await saveSources()) return;
   if (await act('/api/literature/profile', profile(), 'Resolving your papers…'))
-    await act('/api/literature/search', {}, 'Searching arXiv (requests are spaced 3 s apart) and embedding abstracts…');
+    await act('/api/literature/search', {}, 'Searching selected sources and embedding abstracts…');
 };
 $('build-style').onclick = async () => {
   if (await act('/api/literature/writing', writing()))
@@ -54,10 +68,13 @@ function render(v) {
     for (const key of ['audience','section','detail','notes']) $('writing-' + key).value = v.writing[key];
     initialized = true;
   }
+  $('search-sources').value = v.search_sources.join(',');
   if (!$('keywords').value && v.keywords.length) $('keywords').value = v.keywords.join('\n');
   if (!$('papers').value && v.papers.length) $('papers').value = v.papers.map(p => p.id.replace(/^arXiv:/, '').replace(/^doi:/, '')).join('\n');
   $('physics-only').checked = v.physics_only;
-  $('problems').hidden = !v.problems.length; $('problems').textContent = v.problems.join(' · ');
+  $('bond-state').textContent = `Token: ${v.bond.token_source} · ${v.bond.test}`;
+  const problems = [...v.problems, ...(v.last_search?.problems || [])];
+  $('problems').hidden = !problems.length; $('problems').textContent = problems.join(' · ');
   const physbert = v.encoder.kind === 'physbert';
   $('m-encoder').textContent = physbert ? 'PhysBERT' : 'Lexicon';
   $('m-encoder-note').replaceChildren(document.createTextNode(physbert ? 'arXiv-physics BERT · local' : 'Offline fallback · '));
@@ -81,6 +98,7 @@ function render(v) {
     const head = el('div', undefined, 'paper-head'); const score = el('span', r.score.toFixed(0), 'score');
     const a = el('a', r.title); a.href = r.url; a.target = '_blank'; a.rel = 'noopener noreferrer';
     const h = el('h3'); h.append(a); head.append(score, h); item.append(head);
+    item.append(el('small', `Source: ${r.source || 'arXiv'} · retrieved via ${(r.retrieved_via || ['arxiv']).join(' + ')}`));
     item.append(el('small', `${(r.authors || []).slice(0, 3).join(', ')}${(r.authors || []).length > 3 ? ' et al.' : ''} · ${r.published || ''} · ${(r.categories || []).slice(0, 2).join(', ')}`));
     const why = r.match.slot_id ? `Closest interest: ${r.match.labels.join(' / ')} · cos ${r.match.cosine} · attention ${r.match.attention}` : `Outside your anchors (nearest: ${r.match.labels.join(' / ') || '—'}, cos ${r.match.cosine})`;
     item.append(el('p', why, 'why'));

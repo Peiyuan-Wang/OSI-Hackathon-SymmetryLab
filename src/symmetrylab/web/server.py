@@ -264,6 +264,10 @@ def make_server(port=8787, root="data/workbench", config=None):
                         lit.set_profile(data.get("keywords", []), data.get("papers", []), data.get("physics_only", True), data.get('preferences'))
                     elif action == "search":
                         lit.search()
+                    elif action == "sources":
+                        lit.configure_sources(data.get('sources'), data.get('token', ''), bool(data.get('forget_token')))
+                    elif action == "bond-test":
+                        lit.test_bond()
                     elif action == "vote":
                         lit.vote(data.get("paper_id"), data.get("vote"))
                     elif action == "style-vote":

@@ -6,6 +6,7 @@ version in <root>/vectors.json so switching encoders never mixes coordinate syst
 from datetime import datetime, timezone
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import shutil
@@ -13,6 +14,7 @@ import threading
 from symmetrylab.schemas import write_json
 from . import profile as P
 from .arxiv import ArxivClient, resolve
+from .bond import BondClient, BondError, identities
 from .encoders import get_encoder, seed_text, PHYSBERT
 from .style import build_style, terms
 from .personalization import preferences, writing_preferences, paper_facets, context, style_fingerprint, task_examples
@@ -21,7 +23,8 @@ from .ranking import lexical_scores
 MAX_KEYWORDS, MAX_CANDIDATES, SHOWN = 12, 200, 30
 EMPTY = {'keywords': [], 'papers': [], 'physics_only': True, 'candidates': {}, 'feedback': {},
          'style': None, 'style_enabled': False, 'last_search': None, 'problems': [],
-         'preferences': {}, 'writing': {}, 'style_feedback': {}, 'search_round': 0}
+         'preferences': {}, 'writing': {}, 'style_feedback': {}, 'search_round': 0,
+         'search_sources': ['arxiv']}
 
 
 def now():
@@ -33,11 +36,43 @@ def text_of(paper):
 
 
 class Literature:
-    def __init__(self, root, client=None, encoder=None):
+    def __init__(self, root, client=None, encoder=None, bond_factory=BondClient):
         self.root = Path(root)
         self.client = client or ArxivClient()
         self._encoder = encoder
         self.lock = threading.Lock()
+        self.bond_factory = bond_factory
+        self._bond_token = ''
+        self._bond_test = 'Not tested'
+
+    def bond_token(self):
+        return self._bond_token or os.environ.get('SYMMETRYLAB_BOND_TOKEN', '')
+
+    def bond_state(self):
+        return {'configured': bool(self.bond_token()), 'test': self._bond_test,
+                'token_source': 'session' if self._bond_token else ('environment' if self.bond_token() else 'none')}
+
+    def configure_sources(self, sources, token='', forget_token=False):
+        if not isinstance(sources, list) or not sources or any(s not in ('arxiv', 'bond') for s in sources):
+            raise ValueError('Select arXiv, Bond, or both.')
+        if not isinstance(token, str) or len(token) > 8192 or any(c.isspace() for c in token):
+            raise ValueError('Bond token must be one line without spaces.')
+        with self.lock:
+            if token or forget_token:
+                self._bond_token = '' if forget_token else token
+                self._bond_test = 'Not tested'
+            data = self.load()
+            data['search_sources'] = [s for s in ('arxiv', 'bond') if s in sources]
+            self.save(data)
+
+    def test_bond(self):
+        with self.lock:
+            try:
+                self.bond_factory(self.bond_token()).test()
+            except BondError as exc:
+                self._bond_test = str(exc)
+                raise
+            self._bond_test = 'Authenticated list_sources call succeeded'
 
     @property
     def encoder(self):
@@ -109,7 +144,7 @@ class Literature:
                 # Transparent baseline weights, not learned or calibrated probabilities.
                 lexical_score = 100 * lexical[c['id']] / maximum
                 score = max(0., min(100., .85 * m['score'] + .15 * lexical_score + {'up': 4, 'down': -4}.get(vote, 0)))
-                ranked.append({**{k: c[k] for k in ('id', 'url', 'title', 'authors', 'published', 'categories', 'abstract') if k in c},
+                ranked.append({**{k: c[k] for k in ('id', 'url', 'title', 'authors', 'published', 'categories', 'abstract', 'source', 'retrieved_via', 'doi') if k in c},
                                'score': round(score, 1), 'match': m, 'vote': vote,
                                'ranking_components': {'semantic': m['score'], 'lexical': round(lexical_score, 1), 'policy': '85% anchored similarity + 15% normalized BM25 + explicit vote'},
                                'style_selected': bool(data.get('style_feedback', {}).get(c['id']))})
@@ -129,6 +164,7 @@ class Literature:
                 'preferences': preferences(data.get('preferences', {})), 'writing': writing_preferences(data.get('writing', {})),
                 'facets': paper_facets(data['papers']), 'style_stale': stale,
                 'physics_only': data['physics_only'], 'problems': data['problems'], 'last_search': data['last_search'],
+                'search_sources': data['search_sources'], 'bond': self.bond_state(),
                 'encoder': {'kind': enc.kind, 'version': enc.version,
                             'about': PHYSBERT['about'] if enc.kind == 'physbert' else 'Built-in physics concept lexicon (offline fallback)'},
                 'policy': P.POLICY, 'interests': interests, 'drift': drift,
@@ -189,21 +225,49 @@ class Literature:
             if not queries:
                 raise ValueError('Add interest keywords or your own papers first')
             problems, found = [], 0
-            own = {p['id'] for p in data['papers']}
-            for q in queries:
+            own = set().union(*(identities(p) for p in data['papers']))
+            known = {key: pid for pid, paper in data['candidates'].items() for key in identities(paper)}
+            clients = [('arxiv', self.client)] if 'arxiv' in data['search_sources'] else []
+            if 'bond' in data['search_sources']:
                 try:
-                    for row in self.client.search(q, data['physics_only']):
-                        if row['id'] not in own and row['id'] not in data['candidates']:
-                            data['candidates'][row['id']] = dict(row, found_by=q, found_at=now())
-                            found += 1
-                except Exception:
-                    problems.append(f'arXiv search failed for: {q}')
+                    clients.append(('bond', self.bond_factory(self.bond_token())))
+                except BondError as exc:
+                    problems.append(str(exc))
+            counts = {source: 0 for source in data['search_sources']}
+            for source, client in clients:
+                for q in queries:
+                    try:
+                        rows = client.search(q, data['physics_only'])
+                        counts[source] += len(rows)
+                        for row in rows:
+                            keys = identities(row)
+                            if keys & own:
+                                continue
+                            existing = next((known[k] for k in sorted(keys) if k in known), None)
+                            if existing:
+                                paper = data['candidates'][existing]
+                                via = paper.get('retrieved_via', ['arxiv'] if paper.get('source') == 'arXiv' else [])
+                                paper['retrieved_via'] = sorted(set(via + [source]))
+                                if row.get('doi') and not paper.get('doi'):
+                                    paper['doi'] = row['doi']
+                            else:
+                                existing = row['id']
+                                data['candidates'][existing] = dict(row, retrieved_via=[source], found_by=q, found_at=now())
+                                found += 1
+                            known.update({key: existing for key in keys})
+                    except Exception as exc:
+                        # Only our bounded diagnostics can reach the UI; never raw remote errors.
+                        message = str(exc) if isinstance(exc, BondError) else f'{source} search failed for: {q}'
+                        problems.append(message)
+                        if source == 'bond':
+                            break  # Do not multiply failed authentication or quota calls.
             # Keep voted papers; drop the oldest unvoted ones beyond the cap.
             if len(data['candidates']) > MAX_CANDIDATES:
                 unvoted = sorted((c for c in data['candidates'].values() if c['id'] not in data['feedback'] and not data.get('style_feedback', {}).get(c['id'])), key=lambda c: c['found_at'])
                 for c in unvoted[:len(data['candidates']) - MAX_CANDIDATES]:
                     del data['candidates'][c['id']]
-            data['last_search'] = {'at': now(), 'queries': queries, 'new': found, 'problems': problems}
+            data['last_search'] = {'at': now(), 'queries': queries, 'new': found, 'problems': problems,
+                                   'sources': data['search_sources'], 'returned_per_source': counts}
             data['search_round'] = data.get('search_round', 0) + 1
             self.save(data)
             return self.view(data)
@@ -293,6 +357,8 @@ class Literature:
 
     def clear(self):
         with self.lock:
+            self._bond_token = ''
+            self._bond_test = 'Not tested'
             if self.root.exists():
                 shutil.rmtree(self.root)
             return self.view(self.load())

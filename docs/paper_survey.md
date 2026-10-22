@@ -12,7 +12,23 @@ Check **Use these preferences and paper-derived topic excerpts in research plann
 
 ## Retrieval and ranking
 
-Candidate retrieval uses arXiv; DOI resolution also uses Crossref. Physics categories are selected by default. Each search performs at most six queries with 25 results per query, spaced three seconds apart. Query slots first cover up to two rotating keywords, a paper-derived phrase, a current-intent phrase and a positive-feedback phrase; spare slots are filled from remaining queries. This prevents six keywords from excluding all own-paper queries. Repeated searches rotate keyword coverage. Search can transmit phrases derived from current intent or liked papers.
+Candidate retrieval defaults to arXiv, with optional Valency Bond MCP or combined search. Own-paper resolution still uses arXiv and Crossref regardless of the candidate-source selection. Physics categories are selected by default. Each search performs at most six queries per selected provider with at most 25 accepted results per query; arXiv requests are spaced three seconds apart. Query slots first cover up to two rotating keywords, a paper-derived phrase, a current-intent phrase and a positive-feedback phrase; spare slots are filled from remaining queries. This prevents six keywords from excluding all own-paper queries. Repeated searches rotate keyword coverage. Search can transmit phrases derived from current intent or liked papers.
+
+### Optional Valency Bond MCP
+
+1. Sign in to [Valency Settings](https://app.valency.io/settings) and copy your bearer token. Follow the official [Direct API guide](https://docs.valency.io/guides/api/).
+2. Open **Paper survey → Literature sources · Valency Bond MCP**. Choose **arXiv + Valency Bond** (or Bond alone), paste the token, and select **Test Bond connection**. This applies the settings and calls `list_sources`; initialization alone is not a successful connection test.
+3. Select **Find papers**. Cards show the original source where supplied and the retrieval channel(s). Search failures remain visible above the results; one provider's failure preserves results from the other.
+
+The token stays in server memory for the current app session and is never returned to the UI, written to the survey, or embedded in a package. Restarting the app requires entering it again. Developers can alternatively set `SYMMETRYLAB_BOND_TOKEN` in the app's process environment. **Forget session token** clears only the in-memory override, not an environment variable; the UI reports which source is active. **Clear survey & memory** also clears the session token. Source choices persist, so a restarted app with Bond selected will report a missing token until configured again.
+
+The fixed endpoint is `https://mcp.valency.io/`. The standard-library client performs MCP initialization, negotiates a supported protocol version, sends `notifications/initialized`, carries session/protocol headers, and handles JSON or streamed JSON-RPC responses. It rejects redirects and bounds response sizes. It discovers tool schemas with `tools/list` and invokes `semantic_search_papers`; unknown required parameters and unsupported output formats produce visible errors. No tools other than `list_sources` and `semantic_search_papers` are called. No SDK, Node runtime, browser login automation, or new package dependency is required.
+
+Bond results enter the existing local embeddings, ranking, feedback and writing-selection pipeline. Deduplication uses canonical arXiv IDs and DOIs, never title similarity, and retains existing paper IDs and votes. Records without shared identifiers may remain duplicated. With **Physics categories only** enabled, Bond records must have recognizable physics category metadata; unclassified journal records are omitted. Uncheck the option to include them. Counts are accepted results before deduplication, not the provider's total corpus matches. Changing source selection affects future queries and does not remove previously saved papers.
+
+Scope: this integration adds a source to **Paper survey**. It does not add Bond to the Theory/Experiment agent's separate `search_source` tool, implement OAuth login/token refresh, fetch full texts, or automatically verify scientific claims. Sharing survey interests with research runs remains a separate opt-in.
+
+Validation uses synthetic MCP responses and local HTTP API tests. The unauthenticated endpoint was reachable and rejected a request without an Authorization header. Authenticated `list_sources`, actual search schemas/results, coverage beyond arXiv, and account quota behavior still require a user token and live validation. The adapter deliberately reports incompatible schemas instead of assuming that an empty result means the query succeeded. This feature is available in the latest source; the previously published v0.3.1 binaries do not contain it.
 
 The candidate pool aims for 200 entries. Content-voted and writing-selected papers are retained even if protected entries exceed that cap. Title and abstract text is clipped to 2,000 characters for embeddings.
 
@@ -43,7 +59,7 @@ The call consumes the existing model/token/time budgets. Failure, cancellation, 
 
 ## Storage and privacy
 
-Profiles, feedback, samples and vector caches live in the local literature data directory, excluded from Git. Embeddings are computed locally. Search queries and identifiers go to arXiv/Crossref. When enabled, interest packets and selected writing context go to the configured model API and are represented in local run records. Review the selection before including unpublished work. **Clear survey & memory** removes the local literature store.
+Profiles, feedback, samples and vector caches live in the local literature data directory, excluded from Git. Embeddings are computed locally. Search queries go to the selected arXiv/Bond providers; own-paper identifiers and titles go to arXiv/Crossref. When enabled, interest packets and selected writing context go to the configured model API and are represented in local run records. Review the selection before including unpublished work. **Clear survey & memory** removes the local literature store.
 
 ## Validation and remaining work
 

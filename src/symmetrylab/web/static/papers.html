@@ -7,7 +7,7 @@
 <button class="nav clear-history" id="clear" title="Delete keywords, your papers, candidates, votes and the voice profile">⌫ &nbsp; Clear survey &amp; memory</button>
 <div class="sidebar-footer"><div class="status-dot"></div> Local workspace <small id="encoder-footer">Encoder loading…</small></div></aside>
 <main><header><div class="breadcrumb">Workspace <span>/</span> <span>Paper survey</span></div><span class="chip">RESEARCH PREVIEW · v0.3.1</span></header>
-<section class="hero"><div><h1>Read what <em>you</em> would read.</h1><p>Find arXiv papers near your work, learn from your votes, and distil your writing voice for the model.</p></div></section>
+<section class="hero"><div><h1>Read what <em>you</em> would read.</h1><p>Find papers with arXiv and Valency Bond, learn from your votes, and distil your writing voice for the model.</p></div></section>
 
 <section class="composer panel"><div class="section-heading"><h2><span class="number">01</span> Your interests</h2><span class="subtle">Current intent guides; paper history supplies context</span></div>
 <div class="settings-grid">
@@ -25,7 +25,17 @@
 <p>When enabled, this profile is sent to your configured model API during live research. The current research brief takes precedence. Paper topics describe past work, not confirmed future preferences.</p>
 </details>
 <label class="reuse-option"><input id="physics-only" type="checkbox" checked> Physics categories only (cond-mat, quant-ph, physics, hep-th, math-ph)</label>
-<div class="composer-bottom"><p class="privacy-note">Search sends keywords and derived query terms to arXiv, and DOIs to Crossref. Embeddings run locally. Enabled interest and writing profiles are sent to your configured model API in live research.</p>
+<details class="context-details"><summary>Literature sources · Valency Bond MCP</summary>
+<div class="settings-grid">
+<label>Search sources<select id="search-sources"><option value="arxiv">arXiv</option><option value="arxiv,bond">arXiv + Valency Bond</option><option value="bond">Valency Bond</option></select></label>
+<label>Bond bearer token<input id="bond-token" type="password" autocomplete="off" maxlength="8192" placeholder="Leave blank to keep current token"></label>
+</div>
+<p>Get a bearer token from <a href="https://app.valency.io/settings" target="_blank" rel="noopener noreferrer">Valency Settings</a>. It stays in this app session and must be entered again after restarting. It is never saved to your survey or package.</p>
+<p>Physics-only filtering omits Bond records with missing or unrecognized physics categories. Uncheck it to include those records. Changing sources affects future searches; previously collected papers stay in your feed.</p>
+<div class="composer-bottom"><button class="secondary" id="save-sources">Apply sources</button><button class="secondary" id="test-bond">Test Bond connection</button><button class="secondary" id="forget-bond">Forget session token</button></div>
+<p id="bond-state" class="mode-note" role="status"></p>
+</details>
+<div class="composer-bottom"><p class="privacy-note">Search sends keywords and derived query terms to the selected sources. Your paper IDs and titles still resolve through arXiv/Crossref. Embeddings run locally. Enabled interest and writing profiles are sent to your configured model API in live research.</p>
 <div class="run-actions"><button class="secondary" id="save">Save profile</button><button class="primary" id="search">Find papers <span>↗</span></button></div></div>
 <p id="problems" class="mode-note" hidden></p><div id="notice" role="status" hidden></div></section>
 

@@ -7,6 +7,7 @@ from symmetrylab.web.server import make_server
 import sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1] / "unit"))
 from test_literature import FakeArxiv
+from test_bond import FakeBond
 
 
 def test_paper_survey_page_api_and_style_gate(tmp_path):
@@ -25,6 +26,19 @@ def test_paper_survey_page_api_and_style_gate(tmp_path):
         assert v['papers'][0]['id'] == 'arXiv:2510.04184' and v['encoder']['kind'] == 'lexicon'
         v = json.load(request('/api/literature/search', {}, h))
         assert v['candidate_count'] == 5 and v['ranked']
+        server.app.literature.bond_factory = FakeBond
+        with pytest.raises(HTTPError):
+            request('/api/literature/sources', {'sources':['bond'], 'token':'fixture-secret'})
+        v = json.load(request('/api/literature/sources', {'sources':['arxiv','bond'], 'token':'fixture-secret'}, h))
+        assert v['bond']['configured'] and 'fixture-secret' not in json.dumps(v)
+        v = json.load(request('/api/literature/bond-test', {}, h))
+        assert 'succeeded' in v['bond']['test']
+        v = json.load(request('/api/literature/search', {}, h))
+        assert v['candidate_count'] == 6 and v['last_search']['sources'] == ['arxiv', 'bond']
+        assert any(p.get('retrieved_via') == ['arxiv', 'bond'] for p in v['ranked'])
+        v = json.load(request('/api/literature/sources', {'sources':['arxiv'], 'forget_token':True}, h))
+        assert not v['bond']['configured']
+        assert 'fixture-secret' not in (tmp_path / 'literature' / 'profile.json').read_text()
         v = json.load(request('/api/literature/vote', {'paper_id': v['ranked'][0]['id'], 'vote': 'up'}, h))
         assert v['votes']['up'] == 1
         chosen = v['ranked'][0]['id']

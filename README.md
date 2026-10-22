@@ -8,6 +8,8 @@ SymmetryLab supports two research workflows: experimental goals for a named mate
 
 The **v0.3.1 preview** preserves the original theory layout and adds a matching experimental workspace for **L10 MnPt Neel-axis detection**. It includes public metadata retrieval, conditional orientation calculations, counterexample search, paper-linked taste profiles, human preference feedback and rechecked cross-run strategies. Live model research requires a configured provider. Offline walkthroughs use scripted decisions.
 
+**Latest source update:** Paper survey now supports [Valency MCP Bond](https://www.valency.io/bond/) alongside arXiv, with combined retrieval, source attribution and identifier-based deduplication. See [Bond setup](#use-valency-mcp-bond). This integration is not included in the published v0.3.1 desktop packages; run the latest source or build a new package locally.
+
 Read [the discovery benchmark and RSI design](docs/design/discovery_benchmark_rsi.md) for scientific definitions, source boundaries, the benchmark collection plan, controlled experiments and remaining work. This is a research prototype; sample-specific magnetic structure, growth feasibility, quantitative experimental signals and novel discoveries are not established.
 
 ## Desktop app (Windows and macOS)
@@ -56,7 +58,25 @@ Ask a question that mentions spin space groups / SSG. Offline, a scripted walkth
 
 ### Paper survey
 
-Open **http://127.0.0.1:8787/papers** to rank arXiv papers against your keywords and own papers, re-rank by likes, see interest drift, and build a *researcher voice profile* that live runs can use as a style-only system prompt. Optional PhysBERT encoder: `.venv/bin/python -m pip install -e ".[physics]"`, then **Prepare PhysBERT** on the page. See [Paper survey](docs/paper_survey.md).
+Open **http://127.0.0.1:8787/papers** to rank papers from arXiv and optionally Valency Bond against your keywords and own papers, re-rank by likes, see interest drift, and build a *researcher voice profile* for the separate writing pass after live research. Optional PhysBERT encoder: `.venv/bin/python -m pip install -e ".[physics]"`, then **Prepare PhysBERT** on the page. See [Paper survey](docs/paper_survey.md).
+
+#### Use Valency MCP Bond
+
+Bond is an optional literature source; arXiv remains the default. The integration uses the official remote MCP server at `https://mcp.valency.io/`, with Streamable HTTP and bearer-token authentication. It requires no additional runtime dependency or model API key for paper search.
+
+1. Sign up or sign in to [Valency](https://app.valency.io/login), then obtain a bearer token from [Valency Settings](https://app.valency.io/settings). See the official [Direct API setup guide](https://docs.valency.io/guides/api/).
+2. Start the latest source with `.venv/bin/python -m symmetrylab serve` and open **Paper survey**. On Windows use `.venv\Scripts\python.exe -m symmetrylab serve`.
+3. Expand **Literature sources · Valency Bond MCP**. Choose **arXiv + Valency Bond** for combined search, or **Valency Bond** to query only Bond.
+4. Paste your token into **Bond bearer token**, then click **Test Bond connection**. This saves the source choice, keeps the token in memory and calls Bond's `list_sources` tool. The success message confirms an authenticated tool call, not just a reachable server.
+5. Add interest keywords, for example `spin-space groups` and `altermagnetism`, then click **Find papers**. The app discovers the search-tool schema and invokes `semantic_search_papers`; returned records enter the existing ranking and feedback pipeline.
+
+Paper cards show the original source where available and whether they were retrieved through arXiv, Bond, or both. Matching arXiv IDs and DOIs are deduplicated while existing votes are retained. Search errors are displayed without discarding results from the other provider. Papers without shared identifiers may remain duplicated; changing sources does not remove earlier results.
+
+**Token handling:** the token stays only in the current app session and is never saved to the survey, reports or desktop package. Enter it again after restarting. Developers can alternatively supply `SYMMETRYLAB_BOND_TOKEN` in the app's process environment. **Forget session token** clears the in-memory token; an environment token remains active until removed from the environment. Never commit tokens to the repository.
+
+**Filtering and scope:** with **Physics categories only** selected, Bond records without recognized physics category metadata are omitted; uncheck it to include those records. Search phrases go to the selected providers. Resolving your own paper IDs, DOIs and titles still uses arXiv/Crossref. This integration covers Paper survey; the Theory/Experiment agent's separate source tools do not yet call Bond. OAuth login, token refresh and full-text retrieval are not implemented.
+
+**Validation:** the MCP adapter and local HTTP workflow pass tests using synthetic responses. Live authenticated Bond searches, actual response compatibility and coverage beyond arXiv still need validation with a user token. A successful connection test does not by itself validate search. See [implementation status](docs/implementation_status.md) and [detailed setup and limitations](docs/paper_survey.md#optional-valency-bond-mcp).
 
 ### Choose a research workflow
 
@@ -145,7 +165,8 @@ src/symmetrylab/
   tools/                   Registered data-only research operations
   database/                Local run persistence and history
   web/                     Loopback HTTP server and English interface
-  mcp/                     Placeholder for a future MCP integration (empty)
+  literature/              Paper survey, arXiv/Bond adapters, ranking and feedback
+  mcp/                     Valency Bond Streamable HTTP MCP client
 benchmarks/                Golden, Development, and Held-out (currently empty)
 tests/unit/                Mathematics, inputs, certificates, metamorphic checks
 tests/integration/         Full loop, replay, budgets, and mocked models
