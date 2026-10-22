@@ -15,8 +15,6 @@ function connectionView() {
 }
 $('preset').addEventListener('change', () => { if ($('preset').value === 'cc_switch') { $('base-url').value = 'http://127.0.0.1:15721/v1'; $('protocol').value = 'responses'; } else { $('base-url').value = ''; $('protocol').value = 'chat_completions'; } connectionView(); });
 $('mode').addEventListener('change', () => { const live = $('mode').value === 'live'; $('mode-note').textContent = live ? 'The model plans, generates candidates and chooses tools from observed feedback.' : 'Scripted walkthrough with exact calculations. Live mode uses your brief and public source retrieval.'; if (live) $('settings').open = true; });
-$('connection-link').onclick = () => { $('settings').open = true; $('settings').scrollIntoView({behavior:'smooth',block:'center'}); };
-$('new-run').onclick = () => { $('goal').focus(); $('goal').scrollIntoView({behavior:'smooth',block:'center'}); };
 $('test').onclick = async () => {
   $('test').disabled = true; $('connection-status').textContent = 'Testing service…';
   try { const result = await api('/api/connection/test', connection()); $('connection-status').textContent = `Connected · ${result.model} · real request succeeded`; }
@@ -37,13 +35,18 @@ function details(parent, title, value) { const box = el('details'); box.append(e
 function renderTimeline(state) {
   $('plan').replaceChildren(...state.plan.map(step => el('li',step))); $('plan').hidden = !state.plan.length;
   const events = state.events.filter(e => e.kind !== 'thinking' && e.kind !== 'tool');
-  $('timeline').replaceChildren(...events.map(event => {
+  const memory = [];
+  if (state.recalled_lessons?.length) {
+    const m = el('div',undefined,'event memory'); m.append(el('small','MEMORY · BEFORE PLANNING'),el('h3',`${state.recalled_lessons.length} rechecked lesson(s) recalled from earlier runs`),el('p','The plan below was changed accordingly: refuted claims are not re-proposed and known degenerate measurements are skipped.'));
+    memory.push(m);
+  }
+  $('timeline').replaceChildren(...memory, ...events.map(event => {
     const item = el('div',undefined,'event'); const d = event.data;
     item.append(el('small',`${event.kind.toUpperCase().replaceAll('_',' ')} · ${event.seconds}s`));
     if (event.kind === 'plan') { item.append(el('h3','Research plan updated'),el('p',d.action.reason || d.observation.steps.join(' → '))); }
     else if (event.kind === 'hypothesis') { item.append(el('h3',d.observation.id + ' · Unverified proposal'),el('p',d.observation.statement)); }
     else if (event.kind === 'tool_call') {
-      item.append(el('h3',d.name.replaceAll('_',' ')),el('p',d.reason || 'Executing mathematical tool'));
+      item.append(el('h3',d.name.replaceAll('_',' ')),el('p',d.reason || 'Run a registered exact tool.'));
       const resultEvent = state.events.find(e => e.index > event.index && ['tool','action_error'].includes(e.kind));
       details(item,'Tool arguments & observation',{arguments:d.arguments,observation:resultEvent?.data.observation || resultEvent?.data || 'In progress'});
       const observation = resultEvent?.data.observation;
@@ -59,7 +62,8 @@ function renderTimeline(state) {
 function renderCandidates(state) {
   renderDiscovery(state);
   $('candidate-count').textContent = `${state.candidates.length + (state.calculations || []).length} records`;
-  if (!state.candidates.length) { $('candidates').replaceChildren(el('p','No candidates registered yet.','scope-note')); return; }
+  $('candidates').hidden = !state.candidates.length;
+  if (!state.candidates.length) { $('candidates').replaceChildren(); return; }
   $('candidates').replaceChildren(...state.candidates.map(candidate => {
     const result = [...state.evidence].reverse().find(e => e.candidate_id === candidate.case_id && !e.target_id);
     const item = el('div',undefined,'candidate'), top = el('div',undefined,'candidate-top'), title = el('div');
@@ -77,7 +81,7 @@ async function loadReport() {
   const runId = selected;
   const response = await fetch(url); const text = await response.text();
   if (runId !== selected || audience !== $('audience').value) return;
-  if (response.ok) $('report').textContent = text;
+  if (response.ok) $('report').replaceChildren(...markdown(text));
   $('download-md').href = url + '&download=1'; $('download-json').href = `/api/runs/${selected}/download`;
   $('download-md').classList.remove('disabled'); $('download-json').classList.remove('disabled');
 }
@@ -89,13 +93,17 @@ function render(state) {
   renderedVersion = renderKey;
   $('run-status').textContent = state.status.replaceAll('_',' ');
   $('run-mode').textContent = state.mode === 'live' ? 'Live model · iterative research' : 'Simulated policy · offline demo';
-  $('model-calls').textContent = state.metrics.model_calls; $('policy-turns').textContent = `${state.metrics.policy_turns} policy turns`;
-  $('tool-calls').textContent = state.metrics.tool_calls; $('verified').textContent = state.evidence.filter(e=>e.certificate_verified).length + (state.calculations || []).filter(e=>e.certificate_verified).length;
-  $('elapsed').textContent = `${state.metrics.elapsed_seconds}s · ${state.metrics.reported_tokens} reported tokens${state.metrics.usage_missing_calls ? ' (partial)' : ''}`;
+  const live = state.mode === 'live';
+  $('model-calls').textContent = live ? state.metrics.model_calls : 'Offline';
+  $('policy-turns').textContent = live ? `${state.metrics.reported_tokens} reported tokens${state.metrics.usage_missing_calls ? ' (partial)' : ''}` : `No model used · ${state.metrics.policy_turns} scripted steps`;
+  $('tool-calls').textContent = state.metrics.tool_calls;
+  const checks = [...state.evidence, ...(state.calculations || [])];
+  $('verified').textContent = `${checks.filter(e=>e.certificate_verified).length} / ${checks.length}`;
+  $('elapsed').textContent = `Conditional calculations · ${state.metrics.elapsed_seconds}s`;
   $('activity-state').textContent = state.status === 'running' ? '● RUNNING' : state.status.toUpperCase().replaceAll('_',' ');
   $('stop').disabled = state.status !== 'running' || activeRun !== selected;
   renderTimeline(state); renderCandidates(state);
-  if (state.limitations.length && state.status !== 'running') notice(state.limitations.join(' '));
+  if (state.limitations.length && !['running','completed'].includes(state.status)) notice(`Run ${state.status.replaceAll('_',' ')}: ${state.limitations.join(' ')}`);
   const version = `${state.run_id}:${state.events.length}`;
   if (reportVersion !== version) { reportVersion = version; loadReport().catch(e=>notice(e.message)); }
 }
@@ -123,13 +131,12 @@ function setupTrack() {
     for(const id of ['material-field','conditions-field','instruments-field']) $(id).hidden=false;
     $('keywords-field').hidden=true;
     $('hero-title').replaceChildren(document.createTextNode('From material to '),el('em','measurement.'));
-    $('hero-description').textContent='Resolve the sample, compare magnetic hypotheses, and design measurements with testable predictions.';
-    document.querySelector('.orbit-core').textContent='n';
-    document.querySelector('.orbit small').textContent='n · Q';
+    $('hero-description').textContent='Compare magnetic hypotheses exactly, find which measurements can tell them apart, and design the experiment.';
+    $('scope-text').textContent='Conditional single-domain axis constraints and collinear neutron orientation factors. Sample symmetry, energy stability and feasibility need additional evidence.';
+    $('scope-formula').textContent='P(n,Q) = 1 − (n·Q)² / (|n|²|Q|²)';
     $('goal').value='Determine the Neel-axis orientation of L10 MnPt. Compare c-axis and basal-plane hypotheses, search for ambiguous signals, and propose a controlled measurement with conditional predictions.';
     document.title='SymmetryLab · Experimental research';
   } else {
-    $('goal').value='Explore a mechanism-first research direction in spin-space groups and momentum-space symmetries. Propose competing minimal models, test a falsifiable claim, and identify a useful next calculation.';
     document.title='SymmetryLab · Theory exploration';
   }
 }
@@ -161,13 +168,23 @@ function renderDiscovery(state) {
     c.append(el('p',assessment.phase),el('p',assessment.chemical_group),el('p',assessment.magnetic_order));
     details(c,'Conditions and unresolved requirements',assessment);
   }
+  const axisName=v=>({'0,0,1':'[001] c','0,0,-1':'[00-1] c','1,0,0':'[100]','0,1,0':'[010]','1,1,0':'[110]','1,-1,0':'[1-10]'})[v.join(',')]||JSON.stringify(v);
   for(const c of state.calculations||[]) {
-    const r=c.result,box=card(c.calculation_id+' · '+r.kernel.replaceAll('_',' '),c.certificate_verified?'CONDITIONAL EXACT CHECK PASSED':'UNVERIFIED');
+    const r=c.result,axisKernel=r.kernel==='single_domain_director_v1';
+    const box=card(c.calculation_id+' · '+(axisKernel?'Allowed axes':'Neutron orientation factors'),c.certificate_verified?'CONDITIONAL EXACT CHECK PASSED':'UNVERIFIED');
     if(r.factors){
-      const table=el('table',undefined,'evidence-table'),head=el('tr');head.append(el('th','Candidate'));r.inputs.probes.forEach((q,i)=>head.append(el('th','Q'+(i+1))));table.append(head);
-      r.factors.forEach((row,i)=>{const tr=el('tr');tr.append(el('td',r.labels[i]));row.forEach(v=>tr.append(el('td',v)));table.append(tr);});box.append(table);
-      box.append(el('p','Identical pairs: '+(r.identical_pairs.map(x=>x.join(' / ')).join('; ')||'None in this finite set')));
-    } else for(const row of r.outcomes||[])box.append(el('p',JSON.stringify(row.direction)+' · '+(row.compatible?'compatible':'incompatible')+' with assumed domain symmetry'));
+      const name=l=>l.startsWith('n')?axisName(r.inputs.directions[Number(l.slice(1))-1]):'domain mix '+l.slice(10);
+      const table=el('table',undefined,'evidence-table'),head=el('tr');head.append(el('th','Candidate n'));r.inputs.probes.forEach(q=>head.append(el('th','Q '+axisName(q).split(' ')[0])));table.append(head);
+      r.factors.forEach((row,i)=>{const tr=el('tr');tr.append(el('td',name(r.labels[i])));row.forEach(v=>tr.append(el('td',v)));table.append(tr);});box.append(table);
+      const parent=Object.fromEntries(r.labels.map(l=>[l,l])),find=x=>parent[x]===x?x:find(parent[x]);
+      r.identical_pairs.forEach(([a,b])=>{parent[find(a)]=find(b);});
+      const groups={};r.labels.forEach(l=>(groups[find(l)]??=[]).push(name(l)));
+      const tied=Object.values(groups).filter(g=>g.length>1);
+      box.append(el('p',`${r.labels.length} candidates → ${Object.keys(groups).length} distinguishable responses.`+(tied.length?' Still tied: '+tied.map(g=>g.join(' = ')).join('; '):'')));
+    } else {
+      const ok=r.outcomes.filter(x=>x.compatible).map(x=>axisName(x.direction)),no=r.outcomes.filter(x=>!x.compatible).map(x=>axisName(x.direction));
+      box.append(el('p','Allowed: '+(ok.join(', ')||'none')),el('p','Excluded: '+(no.join(', ')||'none')));
+    }
     box.append(el('p','Conditional model; material assignment and accessible reflections remain unresolved.'));details(box,'Inputs, assumptions & exact evidence',c);
   }
   for(const d of state.directions||[]) {const c=card(d.title,d.direction_id+' · PROPOSED DIRECTION');c.append(el('p',d.mechanism),el('p','Next: '+d.next_test));details(c,'Falsifier, taste and evidence',d);}
@@ -180,6 +197,48 @@ function renderDiscovery(state) {
     c.append(select,reason,save,status);
   }
   for(const d of state.experiment_designs||[]){const c=card(d.method,d.design_id+' · CONDITIONAL DESIGN');c.append(el('p',d.hypothesis));for(const prediction of d.predictions)c.append(el('p',prediction));details(c,'Protocol, controls & requirements',d);}
+}
+// Minimal Markdown renderer for the project's own reports. Builds DOM nodes; never uses innerHTML.
+function inline(text) {
+  const nodes = [], re = /\*\*(.+?)\*\*|`([^`]+)`|\[([^\]]+)\]\((https?:[^)\s]+)\)/g; let last = 0, m;
+  while ((m = re.exec(text))) {
+    if (m.index > last) nodes.push(document.createTextNode(text.slice(last, m.index)));
+    if (m[1] !== undefined) nodes.push(el('strong', m[1]));
+    else if (m[2] !== undefined) nodes.push(el('code', m[2]));
+    else { const a = el('a', m[3]); a.href = m[4]; a.target = '_blank'; a.rel = 'noopener noreferrer'; nodes.push(a); }
+    last = re.lastIndex;
+  }
+  if (last < text.length) nodes.push(document.createTextNode(text.slice(last)));
+  return nodes;
+}
+function markdown(text) {
+  const out = [], lines = text.split('\n'); let i = 0;
+  const withInline = (tag, t) => { const e = el(tag); e.append(...inline(t)); return e; };
+  while (i < lines.length) {
+    const line = lines[i];
+    if (!line.trim()) { i++; continue; }
+    if (line.startsWith('```')) { const buf = []; i++; while (i < lines.length && !lines[i].startsWith('```')) buf.push(lines[i++]); i++; out.push(el('pre', buf.join('\n'))); continue; }
+    const h = /^(#{1,3}) (.*)/.exec(line); if (h) { out.push(withInline('h' + (h[1].length + 1), h[2])); i++; continue; }
+    if (line === '---') { out.push(el('hr')); i++; continue; }
+    if (line.startsWith('> ')) { out.push(withInline('blockquote', line.slice(2))); i++; continue; }
+    if (line.startsWith('|')) {
+      const table = el('table', undefined, 'evidence-table'); let header = true;
+      while (i < lines.length && lines[i].startsWith('|')) {
+        const cells = lines[i].slice(1, -1).split(' | ').map(c => c.trim());
+        if (!cells.every(c => /^-+$/.test(c))) { const tr = el('tr'); cells.forEach(c => tr.append(withInline(header ? 'th' : 'td', c))); table.append(tr); header = false; }
+        i++;
+      }
+      out.push(table); continue;
+    }
+    const list = /^(- |\d+\. )/.exec(line);
+    if (list) {
+      const ordered = list[1] !== '- ', ul = el(ordered ? 'ol' : 'ul');
+      while (i < lines.length && /^(- |\d+\. )/.test(lines[i])) { ul.append(withInline('li', lines[i].replace(/^(- |\d+\. )/, ''))); i++; }
+      out.push(ul); continue;
+    }
+    out.push(withInline('p', line)); i++;
+  }
+  return out;
 }
 setupTrack();
 

@@ -1,6 +1,6 @@
 # Implementation Status
 
-Current working tree: **v0.3 discovery preview**, 2026-10-22 (Asia/Shanghai). The installed package metadata remains 0.2.0; this preview has not been packaged or published as a release.
+Current version: **0.3.0 discovery preview**, 2026-10-22 (Asia/Shanghai). Not yet published as a release.
 
 ## Implemented in this revision
 
@@ -22,7 +22,7 @@ Current working tree: **v0.3 discovery preview**, 2026-10-22 (Asia/Shanghai). Th
 - Full regression suite: **87 passed**, including local HTTP navigation, origin/token protection, two workspaces, human preference endpoint and speculative-action rejection.
 - Python compilation, JavaScript syntax check and Git whitespace check passed.
 - New deterministic discovery seed suite: **12/12 correct**, zero model calls. This is not a taste or improvement evaluation.
-- Both offline workflows complete with actual exact tools. MnPt produces three conditional calculations and an experiment-design record; theory produces two proposals and a provisional taste profile when context is supplied.
+- Both offline workflows complete with actual exact tools. MnPt produces four conditional calculations (three when a lesson is recalled) and an experiment-design record; theory produces two certified instances, two proposals and a provisional taste profile when context is supplied.
 - Browser: both current workspaces completed new offline runs. The MnPt run produced three checked calculations and one design; theory produced two proposals, keyword-linked preference provenance and a feedback form. Screenshots are saved in the workspace outputs folder.
 - Crossref live search returned five MnPt-related records. COD did not return a valid live structure result in this environment; failures are retained as unavailable, not interpreted physically.
 - The user's explicitly supplied local API configuration successfully returned a real small response from the requested `gpt-6.1-sol` service. No key is stored in repository files.
@@ -32,60 +32,22 @@ Current working tree: **v0.3 discovery preview**, 2026-10-22 (Asia/Shanghai). Th
 - Preference feedback requires a completed dossier. With no selected papers, later recall also requires matching keywords.
 - Repository-visible files were checked against the supplied API key: zero matches. Local provider diagnostics and evaluation outputs are ignored by Git.
 
+## Review fixes (2026-10-22)
+
+- Reports open with mechanically derived **Key findings** and **Still open**; JSON inputs are one line (Researcher only); the nested v0.2 report inside theory dossiers was removed.
+- Audiences now differ in content: Researcher (full tables, inputs, controls, requirements), Physics student (glossary, tables without raw inputs), General reader (findings, plain-language meaning, predictions).
+- The workbench renders reports as formatted Markdown, shows offline runs as "Offline" instead of "0 model calls", reports checks as passed/total, and only shows limitation banners for runs that did not complete.
+- The theory walkthrough now states its claim, refutes it (C001), contrasts a certified obstruction (C002) and builds directions on both; the default question matches.
+- The MnPt walkthrough compares C4z and C2z domain assumptions (V001/V002) instead of a single assumed C4 check.
+- Recalled lessons change the scripted plan: the theory run starts from the revised claim; the experiment run skips the known degenerate c-only probe.
+- Decorative hero graphic, static pipeline strip, duplicate sidebar buttons and footer were removed; each tool call shows its specific purpose.
+
 ## Scientific and implementation limits
 
 This is a conditional research prototype. No sample-specific MnPt magnetic structure, magnetic propagation vector, MSG/SSG, accessible reflection set, energy minimum, calibrated intensity, XMLD spectrum, growth recipe or experimental feasibility has been established. Chemical symmetry does not determine the sample Neel axis. The exact kernels establish only their specified mathematical consequences.
 
 Full-text/PDF paper ingestion, author disambiguation, trained personal preference models, calibrated direction ranking, held-out expert benchmarks, statistical RSI gains and RLVR/GRPO training remain unimplemented. The 48-packet benchmark is a collection protocol, not completed data. The sidebar's real-model mode is distinct from fixed offline walkthroughs.
 
-See [Discovery benchmark and RSI](design/discovery_benchmark_rsi.md) for the full definitions, source references, experiments and priorities. Local credentials and runtime records remain outside tracked source files. This revision has not been committed or pushed.
+See [Discovery benchmark and RSI](design/discovery_benchmark_rsi.md) for the full definitions, source references, experiments and priorities. Local credentials and runtime records remain outside tracked source files.
 
----
-
-# Historical v0.2 checkpoint
-
-Version: 0.2.0. Validation date: 2026-10-22 (Asia/Shanghai).
-
-## Implemented
-
-| Area | Evidence |
-|---|---|
-| Exact verifier | Canonical C2 / C4 / C2xC2 presentations, affine relations, rational gauge solver, independent certificates |
-| Model-driven controller | Model-generated plans, hypotheses and candidates; observed tool feedback; current-run counterexample memory; bounded iteration |
-| Six research tools | Candidate registration, relation checking, gauge solving, gauge comparison, finite shift scanning, executable claim tests |
-| Model connection | Chat Completions and Responses adapters; CC Switch loopback preset; environment-based custom authentication; JSON/SSE parsing |
-| English graphical workbench | Question input, connection settings and probe, run/stop, plan/activity, candidate matrices, certificates, history, audience reports and downloads |
-| Persistence | Atomic snapshots, JSONL traces, final JSON and three Markdown reports; interrupted runs identified on restart |
-| Legacy CLI | Verify, deterministic benchmark, controlled demo and replay remain available |
-| Packaging | Editable installation upgraded to 0.2.0; wheel built and checked for all three static UI assets |
-
-## Validation
-
-Executed in the project's isolated Python 3.12.7 environment:
-
-- Full test suite: **66 passed**. Includes actual loopback HTTP server integration.
-- Source compilation: passed.
-- Dependency consistency: no broken requirements.
-- Deterministic benchmark: **30/30** correct labels, **27/27** valid mathematical certificates, zero model calls.
-- Offline iterative CLI: completed with 8 policy turns, 4 tool calls and 2 certified instances.
-- Actual browser interaction: started the offline run, observed completion, counterexample feedback, hypothesis revision and exact certificates; switched report audience and inspected CC Switch connection fields.
-- Wheel: built successfully; HTML, CSS and JavaScript assets present.
-
-Protocol tests use simulated HTTP responses, including Responses JSON/SSE, placeholder authentication, loopback proxy bypass and remote-error sanitization. An adaptive model double repairs an invalid candidate based on actual tool feedback and then solves it. Budget, cancellation, unsupported tool, incomplete finish, finite scans, mismatched comparisons, relation inconsistency, origin/token protection and restart recovery are tested.
-
-The existing mathematical tests include 400 one-dimensional systems checked against a complete grid, gauge/basis/integer-representative transformations, exhaustive-fallback cases and certificate tampering. These are correctness checks within the supported toy scope, not proof of a discovery advantage.
-
-## Real-model validation boundary
-
-No real model response has been validated in this environment. CC Switch 3.20.3 is installed, but no local listener on port 15721 was running at the check. The workbench needs Codex routing enabled and a provider-supported model ID before a real connection test. The newer upstream conversion guide applies to 3.20.4 and later; older-version format conversion is unverified here.
-
-## Remaining research work
-
-- Real provider evaluation and equal-budget A/B/C/D ablations; held-out benchmarks.
-- Formal parsing and proof of arbitrary natural-language hypotheses.
-- Cross-run memory retrieval and automatic continuation of interrupted runs.
-- MCP and Mathematica integration; general group presentations and physical SSG inputs.
-- Smith normal form with transformations, complete solution-set parameterization and cohomology classification.
-- Novelty assessment, real material predictions and RLVR/GRPO weight training.
-
-The graphical workflow and model orchestration are implemented. An autonomous discovery system that outperforms baselines has not been established. Runtime data remain ignored by Git.
+The v0.2 checkpoint is archived in [reports/v0.2_checkpoint.md](reports/v0.2_checkpoint.md).

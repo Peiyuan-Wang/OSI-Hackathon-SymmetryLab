@@ -10,23 +10,36 @@ def test_mnpt_dossier_refines_a_degenerate_measurement(tmp_path):
     result=run_agent('Determine the MnPt Neel axis',tmp_path/'first',config={'research_profile':{'track':'experiment','material':'L10 MnPt'}})
     assert result['status']=='completed'
     assert result['metrics']['model_calls']==0
-    assert len(result['calculations'])==3
+    assert len(result['calculations'])==4
     assert all(c['certificate_verified'] for c in result['calculations'])
-    assert result['calculations'][1]['result']['identical_pairs']
-    assert len(result['calculations'][2]['result']['identical_pairs'])<len(result['calculations'][1]['result']['identical_pairs'])
+    c4,c2=(sum(x['compatible'] for x in c['result']['outcomes']) for c in result['calculations'][:2])
+    assert (c4,c2)==(2,6)  # the assumed domain symmetry, not the calculation, decides the axis
+    assert result['calculations'][2]['result']['identical_pairs']
+    assert len(result['calculations'][3]['result']['identical_pairs'])<len(result['calculations'][2]['result']['identical_pairs'])
     assert not result['structure_assessments'][0]['sample_verified']
     assert result['experiment_designs'][0]['physical_feasibility']=='requires_sample_and_instrument_validation'
     for audience in ('researcher','student','general'):
         report=render_agent_report(result,audience)
         assert 'Scripted offline' in report and 'V003' in report
-        assert 'No calibrated intensity' in report
+        assert 'No calibrated intensity' in report and '## Key findings' in report
+        assert 'symmetry alone does not decide the axis' in report
+        assert '"rotations": [' not in report  # no exploded JSON inputs
+    reports={a:render_agent_report(result,a) for a in ('researcher','student','general')}
+    assert len(reports['general'])<len(reports['student'])<len(reports['researcher'])
+    assert 'Concepts used' in reports['student'] and 'What this means' in reports['general']
+    assert 'Controls' in reports['researcher'] and 'Controls' not in reports['general']
+    second=run_agent('Determine the MnPt Neel axis',tmp_path/'second',config={'research_profile':{'track':'experiment','material':'L10 MnPt'}})
+    assert second['status']=='completed' and second['recalled_lessons']
+    assert len(second['calculations'])==3 and second['metrics']['tool_calls']<result['metrics']['tool_calls']
+    assert all(len(c['result']['inputs'].get('probes',[1,2]))>1 for c in second['calculations'])
     lessons=recall_lessons(tmp_path,'experiment','demo')
     assert lessons and all(x['status']=='rechecked_conditional_counterexample' for x in lessons)
     assert recall_lessons(tmp_path,'experiment','live')==[]
-    data=json.loads((tmp_path/'first'/'result.json').read_text())
-    for c in data['calculations']:
-        if 'factors' in c['result']:c['result']['factors'][0][0]='999'
-    (tmp_path/'first'/'result.json').write_text(json.dumps(data))
+    for run in ('first','second'):
+        data=json.loads((tmp_path/run/'result.json').read_text())
+        for c in data['calculations']:
+            if 'factors' in c['result']:c['result']['factors'][0][0]='999'
+        (tmp_path/run/'result.json').write_text(json.dumps(data))
     assert recall_lessons(tmp_path,'experiment','demo')==[]
 
 
@@ -37,6 +50,13 @@ def test_theory_taste_and_gauge_memory(tmp_path):
     assert r['taste_profile'] and r['directions'][0]['novelty']=='not_established'
     r2=run_agent('Refine mechanisms',tmp_path/'b',config={'research_profile':profile})
     assert r2['recalled_lessons'][0]['scope']=='public_torus_affine_v1'
+    assert [e['result']['status'] for e in r['evidence']]==['gauge_trivial','gauge_nontrivial']
+    assert 'Every nonzero momentum shift' in r['hypotheses'][0]['statement']
+    assert r2['hypotheses'][0]['statement'].startswith('Recalled lesson')  # refuted claim not re-proposed
+    assert len(r2['hypotheses'])<len(r['hypotheses'])
+    report=render_agent_report(r,'researcher')
+    assert 'Exact toy-model evidence' not in report and report.count('# SymmetryLab')==1
+    assert 'Refuted claim' in report and 'genuine obstruction' in report
     feedback={'origin':'researcher_feedback','left':'A','right':'B','choice':'A','reason':'Prefer minimal models.'}
     (tmp_path/'a'/'preference_feedback.jsonl').write_text(json.dumps(feedback)+'\n')
     assert recall_preferences(tmp_path,r['research_profile'])[0]['reason']=='Prefer minimal models.'

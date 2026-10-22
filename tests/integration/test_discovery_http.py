@@ -41,7 +41,7 @@ def test_two_workspaces_navigation_security_and_human_preference(tmp_path):
         server.app.snapshots[identifier]['status']='interrupted'
         with pytest.raises(HTTPError):request('/api/runs/'+identifier+'/preference',feedback,headers)
         experiment,state=run('experiment')
-        assert state['status']=='completed' and len(state['calculations'])==3
+        assert state['status']=='completed' and len(state['calculations']) in (3,4)
         with request('/api/runs/'+experiment+'/report') as r:
             assert 'Conditional exact' in r.read().decode()
         with request('/api/runs') as r:

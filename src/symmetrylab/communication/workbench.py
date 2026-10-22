@@ -1,5 +1,4 @@
 """Deterministic audience views over exactly the same independently checked evidence."""
-import json
 from symmetrylab.verifier.certificate import verify_certificate
 
 INTRO = {
@@ -20,21 +19,26 @@ def render_agent_report(state, audience="researcher"):
              "Scope: abstract public toy actions only. Finite tests do not prove general theorems or physical realization.", ""]
     if state["mode"] == "demo":
         lines += ["This run uses a simulated offline policy. No live language model was called.", ""]
-    lines += ["## Certified instance evidence", ""]
+    lines += ["## Certified instance evidence", "", "| Candidate | Action | Result | θ | Certificate |", "|---|---|---|---|---|"]
     cases = {c["case_id"]: c for c in state["candidates"]}
     for e in state["evidence"]:
         case, result = cases[e["candidate_id"]], e["result"]
         checked = e["certificate_verified"] and verify_certificate(case, result)
-        relation = f" compared with {e['target_id']}" if e.get("target_id") else ""
-        lines += [f"### {case['case_id']}: {case['label']}{relation}", "",
-                  f"Solver status: {result['status']}. Independent certificate: {'verified' if checked else 'not verified'}.", "",
-                  "```json", json.dumps({"operations": case["operations"], "result": result}, indent=2), "```", ""]
-    lines += ["## Executable claim checks", "", "```json", json.dumps(state["claim_checks"], indent=2), "```", "",
-              "## Hypotheses — unverified model proposals", ""]
+        relation = f" vs {e['target_id']}" if e.get("target_id") else ""
+        action = "; ".join(f"R={op['R']}, s={op['s']}, q={op['q']}" for op in case["operations"])
+        theta = ", ".join(result["theta"]) if result.get("theta") else "—"
+        lines.append(f"| {case['case_id']} {case['label']}{relation} | `{action}` | {result['status'].replace('_', ' ')} | {theta} | {'verified' if checked else 'not verified'} |")
+    if not state["evidence"]:
+        lines.append("| — | — | no evidence | — | — |")
+    lines += ["", "Full certificates are in the evidence JSON.", "", "## Executable claim checks", ""]
+    for claim in state["claim_checks"]:
+        lines.append(f"- \"{claim['statement']}\" — {claim['status']}" + (f" ({', '.join(claim['counterexamples'])})" if claim["counterexamples"] else ""))
+    lines += ["", "## Hypotheses — unverified model proposals", ""]
     for hypothesis in state["hypotheses"]:
         lines += [f"- {hypothesis['id']}: {hypothesis['statement']}"]
     lines += ["", "## Synthesis — unverified model text", "", state.get("summary") or "No final synthesis was produced.", "",
               "## Limitations", ""] + ["- " + item for item in state["limitations"]]
-    lines += ["", "## Metrics", "", "```json", json.dumps(state["metrics"], indent=2), "```", "",
+    m = state["metrics"]
+    lines += ["", "---", "", f"Model calls {m['model_calls']} · policy steps {m['policy_turns']} · tool calls {m['tool_calls']} · {m['elapsed_seconds']} s", "",
               f"Evidence hash: {state.get('evidence_hash', 'run in progress')}", ""]
     return "\n".join(lines)

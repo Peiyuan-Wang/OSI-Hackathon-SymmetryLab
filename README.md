@@ -1,6 +1,8 @@
 # SymmetryLab
 
-**A Verifiable Self-Improving Agent for Condensed Matter Theory**
+**A verifiable research agent for condensed matter symmetry questions**
+
+*Roadmap goal: measurable self-improvement. Current status: rechecked lessons from earlier runs change later plans (shown in the workbench); no learning gain has been measured yet.*
 
 SymmetryLab supports two research workflows: experimental goals for a named material, and theory exploration guided by selected papers and interests. Exact tools check bounded models; source-linked interpretations, research taste, material assignments and experimental proposals retain their own verification status.
 
@@ -26,9 +28,15 @@ On Windows, replace `.venv/bin/python` with `.venv\Scripts\python.exe`. Dependen
 .venv/bin/python -m symmetrylab serve
 ```
 
-Open **http://127.0.0.1:8787/** for theory or **http://127.0.0.1:8787/experiment** for experimental research. Select **Offline demonstration**, then **Start research** to try the complete loop without a key. This mode uses a simulated policy and real exact mathematics; it is explicitly labeled throughout the interface.
+Open **http://127.0.0.1:8787/** for theory or **http://127.0.0.1:8787/experiment** for experimental research. Select **Offline demonstration**, then **Start research** to try the complete loop without a key. This mode uses a scripted policy and real exact mathematics; it is explicitly labeled throughout the interface.
 
-The workbench displays the evolving plan, hypotheses, tool calls, candidate matrices, exact certificates and counterexample memory. Switch the report audience or download Markdown and evidence JSON. Completed runs remain in local history. **Stop run** requests cooperative cancellation; an in-flight model request may take up to its network timeout to return. Keep the terminal running; Ctrl+C stops the server.
+What the two offline walkthroughs show:
+
+- **Theory:** the claim "every nonzero shift is gauge-nontrivial" is refuted by an exact counterexample (inversion with a half shift, θ = (3/4, 0)), contrasted with a certified obstruction (half-period translation), then two follow-up directions are proposed.
+- **Experiment (L10 MnPt):** assuming C4z domain symmetry allows only the c axis, assuming C2z allows every listed axis — so symmetry alone does not decide the Néel axis. A c-only neutron probe leaves basal-plane axes tied; four nonparallel probes separate them except for the n / −n sign. A conditional diffraction design follows.
+- **Run it twice:** the second run recalls the rechecked lesson from the first; the theory run no longer re-proposes the refuted claim and the experiment run skips the degenerate c-only probe (one fewer tool call). This is a scripted demonstration of the memory mechanism, not a measured improvement.
+
+The workbench displays the plan, each tool call with its purpose, exact certificates and recalled lessons. Every report starts with **Key findings** derived from checked records. Switch the audience (Researcher: full tables and controls; Physics student: concepts explained; General reader: short summary) or download Markdown and evidence JSON. Completed runs remain in local history. **Stop run** requests cooperative cancellation; an in-flight model request may take up to its network timeout to return. Keep the terminal running; Ctrl+C stops the server.
 
 ### Choose a research workflow
 
@@ -106,7 +114,7 @@ The verifier baseline achieved 30/30 correct labels on 10 Golden and 20 construc
 
 ## Project structure
 
-The repository follows the Newspaper project's src layout and module boundaries:
+Repository layout:
 
 ```text
 config/                    Configuration without credentials
@@ -124,7 +132,7 @@ src/symmetrylab/
   tools/                   Registered data-only research operations
   database/                Local run persistence and history
   web/                     Loopback HTTP server and English interface
-  mcp/                     Reserved extension boundary
+  mcp/                     Placeholder for a future MCP integration (empty)
 benchmarks/                Golden, Development, and Held-out (currently empty)
 tests/unit/                Mathematics, inputs, certificates, metamorphic checks
 tests/integration/         Full loop, replay, budgets, and mocked models

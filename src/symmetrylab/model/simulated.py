@@ -1,6 +1,10 @@
 """Explicit offline demonstration policy; no model or benchmark-answer access."""
 import json
 
+REASONS = {"register_candidate": "Build a small valid action that could test the current claim.",
+           "test_claim": "Solve the gauge equation exactly and check the claim against this candidate.",
+           "solve_gauge": "Certify whether this shift can be removed by one common origin change."}
+
 
 class SimulatedPolicy:
     def complete(self, messages, max_tokens):
@@ -25,4 +29,4 @@ class SimulatedPolicy:
 
     @staticmethod
     def tool(name, **arguments):
-        return {"action": "tool", "name": name, "arguments": arguments, "reason": "Follow the current plan using exact mathematical feedback."}
+        return {"action": "tool", "name": name, "arguments": arguments, "reason": REASONS.get(name, "Run a registered exact tool.")}
