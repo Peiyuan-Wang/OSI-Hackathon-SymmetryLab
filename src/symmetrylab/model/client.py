@@ -13,7 +13,7 @@ class NoRedirect(HTTPRedirectHandler):
 
 
 class OpenAICompatibleClient:
-    def __init__(self, config, timeout=60):
+    def __init__(self, config, timeout=30):
         url = config["base_url"].rstrip("/")
         parsed = urlsplit(url)
         self.local = parsed.hostname in {"127.0.0.1", "localhost", "::1"}
@@ -47,7 +47,7 @@ class OpenAICompatibleClient:
         else:
             body = {"model": self.model, "messages": messages, "max_tokens": max_tokens, "temperature": 0}
         request = Request(self.url, data=json.dumps(body).encode(), headers={
-            "Content-Type": "application/json", "User-Agent": "SymmetryLab/0.2", "Authorization": "Bearer " + self.key})
+            "Content-Type": "application/json", "Authorization": "Bearer " + self.key})
         handlers = [NoRedirect] + ([ProxyHandler({})] if self.local else [])
         try:
             with build_opener(*handlers).open(request, timeout=self.timeout) as response:

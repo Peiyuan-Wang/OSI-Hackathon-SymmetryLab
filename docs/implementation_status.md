@@ -1,17 +1,5 @@
 # Implementation Status
 
-## Public-page navigation fix, 2026-10-22
-
-External chat/browser links send cross-site navigation headers. The server now permits top-level document navigation to `/` and `/materials` while retaining Host/Origin validation and blocking cross-site API reads, embedded requests and mutations. Regression tests cover both pages and the protected request types. The full receiving-machine suite passes **90 tests**; source compilation and whitespace checks pass. Restart an existing server after a source update so its Python route handlers load the new version.
-
-## Material-explorer integration, 2026-10-22
-
-The additive `/materials` page includes 50 unranked research directions, explicit unknown SG/MSG/SSG fields, an exact Cartesian linear AHE constraint checker with checked certificates, offline trace and JSON export. Its optional model-proposal endpoint uses the existing CC Switch/custom-provider adapter and keeps model text unverified. The original workbench is preserved. Material/SSG lookup and actual literature retrieval remain unconnected adapters.
-
-The teammate's delivery was based on commit `b6a38414e1ff4e481e3494753668af4138043d46`. All 106 source-file hashes matched its manifest, and the 15 changed paths were imported as a separate commit. On the receiving macOS Python 3.12.7 environment, the combined suite passes **88 tests**, source compilation and both JavaScript syntax checks pass, and dependency checks report no broken requirements. The deterministic benchmark remains **30/30** correct labels with **27/27** valid certificates and zero model calls. The relay changes identify requests as `SymmetryLab/0.2` and use a 60-second timeout; adapter tests check these request properties.
-
-The sender reports a successful short live Responses request against `https://api.huanling.icu/v1` with requested model `gpt-6.1-sol`. This result was not independently repeated during integration, and it does not establish that CC Switch forwarding or full model-driven research succeeds on the receiving machine. No credentials or sender-built wheel were imported. See `material_explorer.md` for the setup and scientific limits.
-
 Version: 0.2.0. Validation date: 2026-10-22 (Asia/Shanghai).
 
 ## Implemented
@@ -27,7 +15,7 @@ Version: 0.2.0. Validation date: 2026-10-22 (Asia/Shanghai).
 | Legacy CLI | Verify, deterministic benchmark, controlled demo and replay remain available |
 | Packaging | Editable installation upgraded to 0.2.0; wheel built and checked for all three static UI assets |
 
-## Original workbench validation checkpoint
+## Validation
 
 Executed in the project's isolated Python 3.12.7 environment:
 
@@ -43,9 +31,9 @@ Protocol tests use simulated HTTP responses, including Responses JSON/SSE, place
 
 The existing mathematical tests include 400 one-dimensional systems checked against a complete grid, gauge/basis/integer-representative transformations, exhaustive-fallback cases and certificate tampering. These are correctness checks within the supported toy scope, not proof of a discovery advantage.
 
-## Original real-model validation boundary
+## Real-model validation boundary
 
-At the original workbench checkpoint, no real model response had been validated in this environment. CC Switch 3.20.3 was installed, but no local listener on port 15721 was running at that check. Subsequent troubleshooting confirmed a running local route but observed an upstream Cloudflare 403. The teammate's later request-header change has not been independently validated against that route during integration. The newer upstream conversion guide applies to 3.20.4 and later; older-version format conversion remains unverified here.
+No real model response has been validated in this environment. CC Switch 3.20.3 is installed, but no local listener on port 15721 was running at the check. The workbench needs Codex routing enabled and a provider-supported model ID before a real connection test. The newer upstream conversion guide applies to 3.20.4 and later; older-version format conversion is unverified here.
 
 ## Remaining research work
 

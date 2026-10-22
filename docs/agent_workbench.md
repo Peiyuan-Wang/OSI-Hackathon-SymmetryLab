@@ -18,7 +18,7 @@ Demo mode uses a clearly identified simulated policy with the same tool executio
 
 ## Local UI and storage
 
-Bind only to 127.0.0.1. Browser mutations require a per-server request token and same-origin checks. Top-level document navigation from an external link may open `/` and `/materials`; cross-site API reads, embedded requests and mutations remain blocked. Host and explicit Origin validation also apply to public-page navigation. The UI uses local assets and renders model text as text, not HTML. There is one active run at a time. Each run has a generated ID and its own folder under data/workbench; URLs cannot name arbitrary filesystem paths.
+Bind only to 127.0.0.1. Browser mutations require a per-server request token and same-origin checks. The UI uses local assets and renders model text as text, not HTML. There is one active run at a time. Each run has a generated ID and its own folder under data/workbench; URLs cannot name arbitrary filesystem paths.
 
 The interface supports connection settings, a research question, live/demo selection, progress, cancellation, plans, hypotheses, tool observations, candidate details, exact evidence, three English report views, and report/JSON downloads. API keys stay in server environment variables. Persist state snapshots and event logs so completed and interrupted runs can be inspected after a server restart; automatic continuation of an interrupted run is not yet supported.
 
@@ -37,7 +37,7 @@ Test adaptive multi-turn behavior with a scripted model double that repairs an i
 - `web/server.py`: loopback HTTP, per-server request token, origin checks, one worker, cancellation and download endpoints.
 - `communication/workbench.py`: audience guide plus independently rechecked instance evidence.
 
-Defaults: 24 model turns, 24 tool calls, 40 candidates, 1,600 output tokens per response, 180,000 conservatively reserved estimated tokens, and 240 seconds. Model requests and connection probes use a 60-second network timeout. The token estimate counts UTF-8 bytes plus request overhead; reported provider usage is tracked separately and may be missing. Time limits are cooperative: an in-flight request may complete after cancellation is requested, and mathematical checks finish at checkpoints. No claims of a hard real-time deadline are made.
+Defaults: 24 model turns, 24 tool calls, 40 candidates, 1,600 output tokens per response, 180,000 conservatively reserved estimated tokens, and 240 seconds. The token estimate counts UTF-8 bytes plus request overhead; reported provider usage is tracked separately and may be missing. Time limits are cooperative: network operations have a timeout and mathematical checks finish at checkpoints. No claims of a hard real-time deadline are made.
 
 Supported actions are `plan`, `hypothesis`, `tool`, `finish`. Tool schemas live in the prompt and are validated again by the Python functions. `finish` without a certified instance yields `incomplete`. Three consecutive malformed actions yield `failed`. Invalid mathematical candidates yield observations for the next policy turn. Finite scans record their denominator, domain size and truncation. Evidence hashes bind candidates, exact results and claim-check records; they are integrity aids, not signatures or proofs of novelty.
 
