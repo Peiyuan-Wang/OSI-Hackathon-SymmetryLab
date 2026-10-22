@@ -1,0 +1,7 @@
+{
+  "base_url": "https://api.huanling.icu/v1",
+  "model": "gpt-6.1-sol",
+  "protocol": "responses",
+  "auth_mode": "environment",
+  "api_key_env": "SYMMETRYLAB_API_KEY"
+}

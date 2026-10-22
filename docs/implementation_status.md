@@ -1,5 +1,9 @@
 # Implementation Status
 
+## Local material-explorer handoff, 2026-10-22
+
+The additive `/materials` page includes 50 unranked research directions, explicit unknown SG/MSG/SSG fields, an exact Cartesian linear AHE constraint checker with checked certificates, offline trace and JSON export. Its optional model-proposal endpoint uses the existing CC Switch/custom-provider adapter and keeps model text unverified. The original workbench is preserved. Material/SSG lookup and actual literature retrieval remain unconnected adapters. New and original tests pass: **88 passed**, with Python UTF-8 mode enabled. Source compilation and JavaScript syntax checks pass. Real upstream API validation and Git push were not performed. See `material_explorer.md` for handoff details.
+
 Version: 0.2.0. Validation date: 2026-10-22 (Asia/Shanghai).
 
 ## Implemented
