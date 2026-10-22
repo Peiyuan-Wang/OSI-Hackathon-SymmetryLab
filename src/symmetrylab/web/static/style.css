@@ -14,3 +14,12 @@
 .markdown hr{border:0;border-top:1px solid #e7ebdf;margin:18px 0}.markdown table{margin:8px 0;font-size:12px}
 .markdown .placeholder{color:#8b977f;font-size:12px}
 .event.memory{background:#f3f7ee;border-radius:6px;padding:10px 12px;margin-bottom:6px}
+.clear-history{margin-top:8px;font-size:11px;opacity:.75}.clear-history:hover{opacity:1}
+.paper{padding-bottom:12px;border-bottom:1px solid var(--line)}.paper-head{display:flex;gap:12px;align-items:flex-start}
+.paper .score{min-width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#e8efe1;color:#3d5a33;font-weight:600;font-size:13px;flex:none}
+.paper h3 a{color:inherit;text-decoration:none}.paper h3 a:hover{text-decoration:underline}.paper .why{font-size:11px;color:#7a8b70}
+.paper details p{font-size:11px;line-height:1.6}.votes{display:flex;gap:8px;margin-top:6px}.votes button{font-size:11px;padding:5px 10px}
+.votes button.on{background:#2e5a45;color:#fff;border-color:#2e5a45}.voted-down{opacity:.6}
+.drift-bar{height:5px;background:#eef1e8;border-radius:3px;margin:8px 0}.drift-bar span{display:block;height:100%;background:#c9a24a;border-radius:3px}
+.candidate.emerging{border-color:#c9a24a;background:#fdf9ee}.link-button{background:none;border:0;padding:0;color:#2e5a45;text-decoration:underline;cursor:pointer;font-size:inherit}
+.papers .settings-grid{padding:0 24px;grid-template-columns:1fr 1fr}.papers .settings-grid label{min-width:0}.papers .settings-grid textarea{width:100%;box-sizing:border-box;font-size:12px;margin-top:6px}

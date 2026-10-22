@@ -70,11 +70,15 @@ def run_agent(goal, output, mode="demo", config=None, client=None, cancelled=lam
              "events": [], "summary": None, "limitations": [], "last_observation": None,
              "limits": limits, "metrics": {"policy_turns": 0, "model_calls": 0, "tool_calls": 0,
              "estimated_tokens_reserved": 0, "reported_tokens": 0, "usage_missing_calls": 0, "elapsed_seconds": 0}}
+    style = config.get("style_prompt")
+    if style is not None and (not isinstance(style, str) or not 1 <= len(style) <= 4000):
+        raise ValueError("style_prompt must be 1–4000 characters")
+    state["style_profile"] = ({"hash": config.get("style_hash", digest(style)[:16]), "applied": mode == "live"} if style else None)
     state.update(research_profile=profile, sources=[], retrievals=[], structure_assessments=[],
                  calculations=[], directions=[], experiment_designs=[], taste_profile=[], recalled_lessons=[])
     if profile["reuse_lessons"]:
         from symmetrylab.memory.discovery import recall_lessons
-        state["recalled_lessons"] = recall_lessons(output.parent, profile["track"], mode)
+        state["recalled_lessons"] = recall_lessons(output.parent, profile["track"], mode, goal=goal, material=profile.get("material", ""))
     from symmetrylab.memory.discovery import recall_preferences
     state["preference_feedback"] = recall_preferences(output.parent, profile) if profile["track"] != "legacy" else []
     tools = ResearchTools(state, start + limits["max_seconds"], cancelled, limits["max_candidates"])
@@ -103,8 +107,11 @@ def run_agent(goal, output, mode="demo", config=None, client=None, cancelled=lam
                     "This is a continuing loop, not a fresh task. A plan already exists. Choose ONE tool action now using last_observation; do not restart planning or simulate tool outputs."
                     if state["plan"] and not state["metrics"]["tool_calls"] else
                     "Continue from last_observation. Choose one new useful tool, revise a falsified hypothesis, or finish when the dossier is supported. Do not repeat completed stages.")
-            messages = [{"role": "system", "content": SYSTEM_PROMPT if profile["track"] == "legacy" else DISCOVERY_SYSTEM},
-                        {"role": "user", "content": json.dumps(snapshot, ensure_ascii=False)}]
+            messages = [{"role": "system", "content": SYSTEM_PROMPT if profile["track"] == "legacy" else DISCOVERY_SYSTEM}]
+            if style:
+                # Separate, lower-priority system message: wording only, never tool or evidence rules.
+                messages.append({"role": "system", "content": style})
+            messages.append({"role": "user", "content": json.dumps(snapshot, ensure_ascii=False)})
             # A deliberately conservative UTF-8-byte estimate, not a tokenizer count.
             reserve = len(json.dumps(messages, ensure_ascii=False).encode()) + 1024 + limits["max_output_tokens"]
             if state["metrics"]["estimated_tokens_reserved"] + reserve > limits["max_total_tokens"]:
@@ -160,6 +167,10 @@ def run_agent(goal, output, mode="demo", config=None, client=None, cancelled=lam
                     state["status"] = "completed" if any(e["certificate_verified"] for e in state["evidence"]) else "incomplete"
                     if profile["track"] != "legacy":
                         verified = any(c["certificate_verified"] for c in state["calculations"]) or any(e["certificate_verified"] for e in state["evidence"])
+                        # A design may honestly state that no implemented exact kernel applies to the question.
+                        no_kernel = profile["track"] == "experiment" and any(not d["calculation_ids"] for d in state["experiment_designs"])
+                        state["exact_kernel_applicable"] = not no_kernel or verified
+                        verified = verified or no_kernel
                         deliverable = (bool(state["experiment_designs"]) and bool(state["structure_assessments"])) if profile["track"] == "experiment" else bool(state["directions"])
                         state["status"] = "completed" if verified and deliverable else "incomplete"
                         state["delivery_scope"] = "Conditional research dossier; sample assignment, feasibility and novelty remain unresolved."

@@ -105,3 +105,45 @@ def test_keyword_only_preferences_are_scoped_to_the_supplied_interests(tmp_path)
     (tmp_path/'a'/'preference_feedback.jsonl').write_text(json.dumps(item)+'\n')
     assert recall_preferences(tmp_path,r['research_profile'])
     assert not recall_preferences(tmp_path,dict(r['research_profile'],keywords='unrelated transport theory'))
+
+
+def test_lessons_do_not_cross_into_unrelated_questions(tmp_path):
+    run_agent('Determine the Neel-axis orientation of L10 MnPt',tmp_path/'axis',config={'research_profile':{'track':'experiment','material':'L10 MnPt'}})
+    assert recall_lessons(tmp_path,'experiment','demo',goal='Determine the Neel-axis orientation of L10 MnPt',material='L10 MnPt')
+    assert recall_lessons(tmp_path,'experiment','demo',goal='对于L10 MnPt的磁隧道结有TMR效应吗',material='L10 MnPt')==[]
+    assert recall_lessons(tmp_path,'experiment','demo',goal='Does an L10 MnPt tunnel junction show TMR?',material='L10 MnPt')==[]
+    assert recall_lessons(tmp_path,'experiment','demo',goal='Determine the Neel-axis orientation of L10 MnPt',material='Mn2Au')==[]
+
+
+def test_design_without_applicable_kernel_completes_honestly(tmp_path):
+    class Transport:
+        def complete(self,messages,max_tokens):
+            s=json.loads(messages[-1]['content'])
+            if not s['plan']: a={'action':'plan','steps':['load','assess','design']}
+            elif not s['sources']: a={'action':'tool','name':'load_material_context','arguments':{}}
+            elif not s['structure_assessments']: a={'action':'tool','name':'record_structure_assessment','arguments':{'source_ids':['S001'],'phase':'L10','chemical_group':'P4/mmm','magnetic_order':'AFM','conditions':['unspecified'],'unresolved':['junction']}}
+            elif not s['experiment_designs']: a={'action':'tool','name':'design_experiment','arguments':{'hypothesis':'h','method':'transport','source_ids':['S001'],'calculation_ids':[],'steps':['s'],'controls':['c'],'predictions':['p'],'falsifier':'f','requirements':['r']}}
+            else: a={'action':'finish','summary':'Answer: possible but unproven.','limitations':['source-based only']}
+            return {'content':json.dumps(a),'usage':{}}
+    r=run_agent('Does an L10 MnPt tunnel junction show TMR?',tmp_path/'tmr',mode='live',client=Transport(),config={'research_profile':{'track':'experiment','material':'L10 MnPt'}})
+    assert r['status']=='completed' and not r['calculations'] and r['exact_kernel_applicable'] is False
+    report=render_agent_report(r,'researcher')
+    assert 'No implemented exact kernel addresses this question' in report
+    assert 'neutron' not in report.split('## Research brief')[0].lower()
+    assert report.index('Answer: possible') < report.index('## Key findings')
+
+
+def test_voice_profile_is_a_separate_system_message_in_live_runs(tmp_path):
+    seen = []
+    class Capture(DiscoveryDemo):
+        def complete(self, messages, max_tokens):
+            seen.append([m for m in messages if m['role'] == 'system'])
+            return super().complete(messages, max_tokens)
+    style = 'RESEARCHER VOICE PROFILE — governs wording and emphasis only.\nPreferred terminology: spin space group.'
+    r = run_agent('Explore spin groups', tmp_path / 'voice', mode='live', client=Capture(),
+                  config={'style_prompt': style, 'style_hash': 'abc123', 'research_profile': {'track': 'theory', 'keywords': 'spin groups'}})
+    assert all(len(s) == 2 and s[1]['content'] == style and 'VOICE' not in s[0]['content'] for s in seen)
+    assert r['style_profile'] == {'hash': 'abc123', 'applied': True}
+    assert 'Researcher voice profile `abc123` applied' in render_agent_report(r, 'researcher')
+    plain = run_agent('Explore spin groups', tmp_path / 'plain', mode='live', client=DiscoveryDemo(), config={'research_profile': {'track': 'theory'}})
+    assert plain['style_profile'] is None

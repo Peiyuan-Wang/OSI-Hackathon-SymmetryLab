@@ -11,6 +11,8 @@ dependencies = ["sympy==1.14.0"]
 
 [project.optional-dependencies]
 dev = ["pytest==8.4.2"]
+# PhysBERT encoder for the paper survey (pulls in PyTorch; model ~440 MB, downloaded only on request)
+physics = ["sentence-transformers==6.2.0"]
 
 [project.scripts]
 symmetrylab = "symmetrylab.cli:main"

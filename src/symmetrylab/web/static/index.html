@@ -2,8 +2,8 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SymmetryLab · Research workbench</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
 <body>
 <aside class="sidebar"><a class="brand" href="/"><span class="brandmark">S<span>✳</span></span><span>SymmetryLab<small>VERIFIABLE RESEARCH</small></span></a>
-<div class="workspace-label">WORKSPACE <span>LOCAL</span></div><a class="nav track-link" id="theory-link" href="/">◈ &nbsp; Theory exploration</a><a class="nav track-link" id="experiment-link" href="/experiment">◇ &nbsp; Experimental research</a>
-<div class="sidebar-section">RESEARCH HISTORY</div><div id="history" class="history"><p>No experiments yet.</p></div>
+<div class="workspace-label">WORKSPACE <span>LOCAL</span></div><a class="nav track-link" id="theory-link" href="/">◈ &nbsp; Theory exploration</a><a class="nav track-link" id="experiment-link" href="/experiment">◇ &nbsp; Experimental research</a><a class="nav track-link" href="/papers">▤ &nbsp; Paper survey</a>
+<div class="sidebar-section">RESEARCH HISTORY</div><div id="history" class="history"><p>No experiments yet.</p></div><button class="nav clear-history" id="clear-history" title="Delete this workspace's stored runs, their reusable lessons and saved preferences">⌫ &nbsp; Clear history &amp; memory</button>
 <div class="sidebar-footer"><div class="status-dot"></div> Local workspace <small>Conditional models · Exact arithmetic<br>SymmetryLab / 0.3 preview</small></div></aside>
 <main><header><div class="breadcrumb">Workspace <span>/</span> <span id="track-label">Theory exploration</span></div><span class="chip">RESEARCH PREVIEW · v0.3</span></header>
 <section class="hero"><div><h1 id="hero-title">Make symmetry <em>testable.</em></h1><p id="hero-description">Propose a claim, let exact tools try to break it, and keep only what survives.</p></div></section>
@@ -20,6 +20,7 @@
 <label class="paper-upload">Import a text reading list <input id="paper-file" type="file" accept=".txt,.md"></label>
 <label for="taste-notes">Your corrections and preferences</label><textarea id="taste-notes" maxlength="1500" rows="2" placeholder="Prefer mechanism-first minimal models; avoid broad material screening; explain why a direction interests you."></textarea>
 <p>Inferred preferences cite the supplied text and remain open to your correction. Only selected text is used; local papers are never scanned automatically.</p></details>
+<label class="reuse-option"><input id="use-style" type="checkbox"> Write in my research voice (live mode; built on the Paper survey page)</label>
 <label class="reuse-option"><input id="reuse-lessons" type="checkbox" checked> Reuse rechecked lessons from earlier runs — a recalled lesson changes the plan and is shown in Activity</label>
 <div class="composer-bottom"><div class="mode-picker"><label for="mode">POLICY</label><select id="mode"><option value="demo">Offline demonstration</option><option value="live">Live model research</option></select></div><div class="run-actions"><button class="secondary" id="stop" disabled>Stop run</button><button class="primary" id="start">Start research <span>↗</span></button></div></div>
 <p class="mode-note" id="mode-note">Scripted walkthrough with real exact calculations. Live mode is required for question-dependent planning and source retrieval.</p><p class="privacy-note">Use public or shareable research context. Live mode sends your brief, selected paper text and tool feedback to the configured model, and search queries to COD / Crossref.</p>

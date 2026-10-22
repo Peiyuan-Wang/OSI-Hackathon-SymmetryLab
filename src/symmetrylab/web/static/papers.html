@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>SymmetryLab · Paper survey</title><link rel="stylesheet" href="/style.css"><script src="/papers.js" defer></script></head>
+<body class="papers">
+<aside class="sidebar"><a class="brand" href="/"><span class="brandmark">S<span>✳</span></span><span>SymmetryLab<small>VERIFIABLE RESEARCH</small></span></a>
+<div class="workspace-label">WORKSPACE <span>LOCAL</span></div><a class="nav track-link" href="/">◈ &nbsp; Theory exploration</a><a class="nav track-link" href="/experiment">◇ &nbsp; Experimental research</a><a class="nav track-link active" href="/papers">▤ &nbsp; Paper survey</a>
+<div class="sidebar-section">INTEREST PROFILE</div><div id="side-interests" class="history"><p>No interests yet.</p></div>
+<button class="nav clear-history" id="clear" title="Delete keywords, your papers, candidates, votes and the voice profile">⌫ &nbsp; Clear survey &amp; memory</button>
+<div class="sidebar-footer"><div class="status-dot"></div> Local workspace <small id="encoder-footer">Encoder loading…</small></div></aside>
+<main><header><div class="breadcrumb">Workspace <span>/</span> <span>Paper survey</span></div><span class="chip">RESEARCH PREVIEW · v0.3</span></header>
+<section class="hero"><div><h1>Read what <em>you</em> would read.</h1><p>Find arXiv papers near your work, learn from your votes, and distil your writing voice for the model.</p></div></section>
+
+<section class="composer panel"><div class="section-heading"><h2><span class="number">01</span> Your interests</h2><span class="subtle">Your own papers count most; likes refine the profile</span></div>
+<div class="settings-grid">
+<label>Interest keywords — one per line<textarea id="keywords" rows="5" maxlength="1500" placeholder="spin-space groups&#10;altermagnetism&#10;tunnel magnetoresistance in antiferromagnets"></textarea></label>
+<label>Your published papers — arXiv ID, DOI or exact title, one per line<textarea id="papers" rows="5" maxlength="4000" placeholder="2510.04184&#10;10.1103/PhysRevB.104.144403&#10;Longitudinal transport spin polarization of spin degenerate antiferromagnets"></textarea></label>
+</div>
+<label class="reuse-option"><input id="physics-only" type="checkbox" checked> Physics categories only (cond-mat, quant-ph, physics, hep-th, math-ph)</label>
+<div class="composer-bottom"><p class="privacy-note">Keywords, titles and IDs are sent to arXiv (and DOIs to Crossref). Abstracts are embedded locally; nothing is uploaded elsewhere.</p>
+<div class="run-actions"><button class="secondary" id="save">Save profile</button><button class="primary" id="search">Find papers <span>↗</span></button></div></div>
+<p id="problems" class="mode-note" hidden></p><div id="notice" role="status" hidden></div></section>
+
+<section class="metrics" aria-label="Survey metrics"><div><span>ENCODER</span><strong id="m-encoder">—</strong><small id="m-encoder-note">Semantic space for papers</small></div><div><span>CANDIDATES</span><strong id="m-candidates">—</strong><small id="m-search">No search yet</small></div><div><span>FEEDBACK</span><strong id="m-votes">—</strong><small>Likes · dislikes (90-day half-life)</small></div><div><span>INTEREST DRIFT</span><strong id="m-drift">—</strong><small id="m-drift-note">Likes outside your anchors</small></div></section>
+
+<div class="work-grid"><section class="panel stream-panel"><div class="section-heading"><h2><span class="number">02</span> Ranked papers</h2><span class="subtle" id="ranked-count">0 shown</span></div>
+<div id="ranked"><div class="empty"><div class="empty-symbol">▤</div><h3>Your feed starts with your work.</h3><p>Add keywords or papers, then Find papers. Vote to re-rank instantly.</p></div></div></section>
+<section class="panel evidence-panel"><div class="section-heading"><h2><span class="number">03</span> Interest map</h2><span class="subtle" id="interest-count">0 anchors</span></div>
+<div id="interests"></div>
+<div class="scope-note"><strong>How ranking works</strong><p>Each keyword and paper is an anchor (Q). Papers are keys/values (K = V). Attention = softmax(cos(anchor, paper) / 0.12) assigns each vote to anchors; likes pull an anchor, dislikes push it, limited to 25°. Likes no anchor explains are flagged as emerging interests. Ported from Newspaper's anchored multi-interest profile; no model is trained.</p></div></section></div>
+
+<section class="panel report-panel"><div class="section-heading"><h2><span class="number">04</span> Researcher voice profile</h2><div class="report-controls"><label class="reuse-option"><input id="style-enabled" type="checkbox"> Use in live model runs</label><button class="secondary" id="build-style">Build from my papers &amp; likes</button><a id="download-style" class="download disabled">↓ Prompt</a></div></div>
+<p class="report-caption">A system prompt distilled from your papers (primary) and liked papers (secondary): focus, terminology, register and exemplar sentences. It changes wording only — never tools, evidence labels or verification.</p>
+<div id="style" class="markdown"><p class="placeholder">Build the profile after adding your papers or liking a few results.</p></div></section>
+</main></body></html>

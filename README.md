@@ -38,6 +38,10 @@ What the two offline walkthroughs show:
 
 The workbench displays the plan, each tool call with its purpose, exact certificates and recalled lessons. Every report starts with **Key findings** derived from checked records. Switch the audience (Researcher: full tables and controls; Physics student: concepts explained; General reader: short summary) or download Markdown and evidence JSON. Completed runs remain in local history. **Stop run** requests cooperative cancellation; an in-flight model request may take up to its network timeout to return. Keep the terminal running; Ctrl+C stops the server.
 
+### Paper survey
+
+Open **http://127.0.0.1:8787/papers** to rank arXiv papers against your keywords and own papers, re-rank by likes, see interest drift, and build a *researcher voice profile* that live runs can use as a style-only system prompt. Optional PhysBERT encoder: `.venv/bin/python -m pip install -e ".[physics]"`, then **Prepare PhysBERT** on the page. See [Paper survey](docs/paper_survey.md).
+
 ### Choose a research workflow
 
 - **Experimental research:** enter the material, observational goal, sample conditions and instruments. The default MnPt walkthrough compares candidate axes, exposes ambiguous geometries and produces a conditional neutron-measurement plan. Its normalized factors are not absolute intensities or verified accessible reflections.

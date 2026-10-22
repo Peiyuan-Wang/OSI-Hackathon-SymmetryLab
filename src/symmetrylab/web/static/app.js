@@ -4,9 +4,15 @@ const track = location.pathname === '/experiment' ? 'experiment' : 'theory';
 let token = '', selected = null, current = null, polling = false, reportVersion = '', activeRun = null, renderedVersion = '';
 function el(tag, text, className) { const e = document.createElement(tag); if (text !== undefined) e.textContent = text; if (className) e.className = className; return e; }
 function notice(text) { $('notice').textContent = text; $('notice').hidden = !text; }
-async function api(path, data) {
+async function api(path, data, retried = false) {
   const response = await fetch(path, data === undefined ? {} : {method:'POST',headers:{'Content-Type':'application/json','X-SymmetryLab-Token':token},body:JSON.stringify(data)});
-  const value = await response.json(); if (!response.ok) throw new Error(value.error || 'Request failed'); return value;
+  const value = await response.json();
+  // The server issues a new token on every restart; fetch it once and retry instead of failing.
+  if (response.status === 403 && data !== undefined && !retried) {
+    const boot = await fetch('/api/bootstrap').then(r => r.json()); token = boot.token || token;
+    return api(path, data, true);
+  }
+  if (!response.ok) throw new Error(response.status === 403 ? 'Local request token expired (server restarted). Reload the page.' : (value.error || 'Request failed')); return value;
 }
 function connection() { return {base_url:$('base-url').value.trim(), model:$('model').value.trim(), protocol:$('protocol').value, auth_mode:$('preset').value === 'cc_switch' ? 'cc_switch' : 'environment', api_key_env:$('key-env').value.trim()}; }
 function connectionView() {
@@ -26,7 +32,7 @@ $('start').onclick = async () => {
   try {
     if ($('mode').value === 'live' && !$('model').value.trim()) throw new Error('Enter your provider’s model ID in Model connection before starting live research.');
     const turns = Number($('calls').value); if (!Number.isInteger(turns) || turns < 1 || turns > 50) throw new Error('Model-turn budget must be between 1 and 50.');
-    const result = await api('/api/runs', {goal:$('goal').value, research_profile:researchProfile(), mode:$('mode').value, connection:connection(), limits:{max_model_calls:turns}});
+    const result = await api('/api/runs', {goal:$('goal').value, research_profile:researchProfile(), mode:$('mode').value, connection:connection(), limits:{max_model_calls:turns}, use_style:$('use-style').checked});
     selected = result.run_id; activeRun = selected; reportVersion = ''; await refresh();
   } catch (error) { notice(error.message); $('start').disabled = Boolean(activeRun); }
 };
@@ -37,7 +43,7 @@ function renderTimeline(state) {
   const events = state.events.filter(e => e.kind !== 'thinking' && e.kind !== 'tool');
   const memory = [];
   if (state.recalled_lessons?.length) {
-    const m = el('div',undefined,'event memory'); m.append(el('small','MEMORY · BEFORE PLANNING'),el('h3',`${state.recalled_lessons.length} rechecked lesson(s) recalled from earlier runs`),el('p','The plan below was changed accordingly: refuted claims are not re-proposed and known degenerate measurements are skipped.'));
+    const m = el('div',undefined,'event memory'); m.append(el('small','MEMORY · BEFORE PLANNING'),el('h3',`${state.recalled_lessons.length} rechecked lesson(s) from a similar earlier question`),el('p',state.mode==='demo'?'The plan below was changed accordingly: refuted claims are not re-proposed and known degenerate measurements are skipped.':'Given to the model as scope-limited hints. Clear history & memory in the sidebar to start without them.'));
     memory.push(m);
   }
   $('timeline').replaceChildren(...memory, ...events.map(event => {
@@ -85,6 +91,15 @@ async function loadReport() {
   $('download-md').href = url + '&download=1'; $('download-json').href = `/api/runs/${selected}/download`;
   $('download-md').classList.remove('disabled'); $('download-json').classList.remove('disabled');
 }
+$('clear-history').onclick = async () => {
+  const label = track === 'experiment' ? 'Experimental research' : 'Theory exploration';
+  if (!confirm(`Delete all stored ${label} runs on this computer?\n\nThis removes their reports, evidence, reusable lessons and saved preferences. It cannot be undone.`)) return;
+  try { const r = await api('/api/runs/clear', {track}); selected = null; current = null; reportVersion = ''; renderedVersion = '';
+    $('history').replaceChildren(el('p','No experiments yet.')); $('timeline').replaceChildren(); $('discovery-evidence').replaceChildren(); $('candidates').replaceChildren();
+    $('report').replaceChildren(el('p','History cleared. Start a new run.','placeholder')); $('run-status').textContent='Ready';
+    notice(`Removed ${r.removed} run(s) and their memory from ${label}.`); await refresh(); }
+  catch (e) { notice(e.message); }
+};
 $('audience').onchange = () => loadReport().catch(e => notice(e.message));
 function render(state) {
   current = state; if (!state.metrics) return;
@@ -154,9 +169,10 @@ function renderDiscovery(state) {
     c.append(el('p','Only scope-limited strategies are recalled. Previous model conclusions are not treated as facts.'));details(c,'Provenance',state.recalled_lessons);
   }
   if(state.taste_profile?.length){const c=card('Research taste','INFERRED · REVIEW PENDING');for(const pref of state.taste_profile)c.append(el('p',pref.preference));details(c,'Preference evidence',state.taste_profile);}
-  if(state.sources?.length){const c=card('Source ledger',`${state.sources.length} SOURCES · SAMPLE UNRESOLVED`);for(const source of state.sources){
+  if(state.sources?.length){const shown=state.sources.filter(x=>x.mentions_material!==false),other=state.sources.length-shown.length;
+    const c=card('Source ledger',`${shown.length} RELEVANT SOURCES${other?` · ${other} OFF-TOPIC HIDDEN`:''} · SAMPLE UNRESOLVED`);for(const source of shown){
     let url;try{url=new URL(source.url);}catch{continue;}if(!['https:','http:'].includes(url.protocol))continue;
-    const a=el('a',source.source_id+' · '+(source.fields.title || source.record_id),'source-link');a.href=url.href;a.target='_blank';a.rel='noopener noreferrer';c.append(a);
+    const a=el('a',source.source_id+' · '+(source.provider==='arXiv'?'[arXiv] ':'')+[].concat(source.fields.title || source.record_id).join('; '),'source-link');a.href=url.href;a.target='_blank';a.rel='noopener noreferrer';c.append(a);
   } details(c,'Retrieval scope and source records',state.sources);}
   for(const retrieval of state.retrievals||[]) {
     if(retrieval.status==='retrieved')continue;
@@ -168,7 +184,7 @@ function renderDiscovery(state) {
     c.append(el('p',assessment.phase),el('p',assessment.chemical_group),el('p',assessment.magnetic_order));
     details(c,'Conditions and unresolved requirements',assessment);
   }
-  const axisName=v=>({'0,0,1':'[001] c','0,0,-1':'[00-1] c','1,0,0':'[100]','0,1,0':'[010]','1,1,0':'[110]','1,-1,0':'[1-10]'})[v.join(',')]||JSON.stringify(v);
+  const axisName=v=>({'0,0,1':'[001] c','0,0,-1':'[00-1] c','1,0,0':'[100]','0,1,0':'[010]','1,1,0':'[110]','1,-1,0':'[1-10]'})[v.join(',')]||'['+v.join(v.every(x=>String(x).replace('-','').length===1)?'':',')+']';
   for(const c of state.calculations||[]) {
     const r=c.result,axisKernel=r.kernel==='single_domain_director_v1';
     const box=card(c.calculation_id+' · '+(axisKernel?'Allowed axes':'Neutron orientation factors'),c.certificate_verified?'CONDITIONAL EXACT CHECK PASSED':'UNVERIFIED');

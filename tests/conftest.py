@@ -11,3 +11,9 @@ def case_factory():
     def load(name="T01"):
         return deepcopy(read_json(ROOT / "benchmarks/golden" / (name + ".json")))
     return load
+
+
+@pytest.fixture(autouse=True)
+def offline_encoder(monkeypatch):
+    """Server tests use the deterministic lexicon encoder; PhysBERT has its own opt-in test."""
+    monkeypatch.setenv("SYMMETRYLAB_ENCODER", "lexicon")

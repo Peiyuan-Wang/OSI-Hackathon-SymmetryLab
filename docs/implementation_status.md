@@ -19,7 +19,7 @@ Current version: **0.3.0 discovery preview**, 2026-10-22 (Asia/Shanghai). Not ye
 
 ## Checks completed
 
-- Full regression suite: **87 passed**, including local HTTP navigation, origin/token protection, two workspaces, human preference endpoint and speculative-action rejection.
+- Full regression suite: **103 passed**, including local HTTP navigation, origin/token protection, two workspaces, human preference endpoint and speculative-action rejection.
 - Python compilation, JavaScript syntax check and Git whitespace check passed.
 - New deterministic discovery seed suite: **12/12 correct**, zero model calls. This is not a taste or improvement evaluation.
 - Both offline workflows complete with actual exact tools. MnPt produces four conditional calculations (three when a lesson is recalled) and an experiment-design record; theory produces two certified instances, two proposals and a provisional taste profile when context is supplied.
@@ -41,6 +41,19 @@ Current version: **0.3.0 discovery preview**, 2026-10-22 (Asia/Shanghai). Not ye
 - The MnPt walkthrough compares C4z and C2z domain assumptions (V001/V002) instead of a single assumed C4 check.
 - Recalled lessons change the scripted plan: the theory run starts from the revised claim; the experiment run skips the known degenerate c-only probe.
 - Decorative hero graphic, static pipeline strip, duplicate sidebar buttons and footer were removed; each tool call shows its specific purpose.
+
+## Fixes after the live MnPt TMR run (2026-10-22)
+
+- Lessons are recalled only from runs with the same material and an overlapping question (token overlap ≥ 0.3); a Neel-axis lesson no longer reaches a TMR question. A sidebar **Clear history & memory** button deletes one workspace's runs, lessons and preferences after confirmation (`POST /api/runs/clear`, token-protected, refused while a run is active).
+- The prompt no longer prefers neutron geometry. Exact kernels are used only when they answer the question; `design_experiment` accepts `calculation_ids: []`, and the report then states that no implemented kernel applies.
+- New `arxiv` source kind (arXiv API); arXiv DOIs (10.48550/…) resolve through arXiv instead of Crossref, which returns 404 for them. Crossref searches request journal/posted/proceedings records, so supporting-information files (`.s001`) are excluded. Every retrieved record carries `mentions_material`; off-topic records are collapsed in reports and the UI.
+- The curated MnPt packet now includes arXiv:2510.04184 (spin polarization in PT-symmetric antiferromagnets including L10-MnPt).
+- Reports open with the direct answer; the model is asked to answer in the language of the question.
+
+## Paper survey (2026-10-22)
+
+- New `/papers` workspace: arXiv retrieval (physics categories), PhysBERT or lexicon embeddings, Newspaper-style anchored multi-interest ranking with attention routing and reversible feedback, emerging-interest drift, and a deterministic researcher voice profile injected as a separate system message in live runs. See [paper_survey.md](paper_survey.md).
+- Verified: 103 tests; end-to-end browser run against live arXiv with PhysBERT (103 candidates, votes re-rank, profile built). Not verified: effect of the voice profile on a real model's prose.
 
 ## Scientific and implementation limits
 

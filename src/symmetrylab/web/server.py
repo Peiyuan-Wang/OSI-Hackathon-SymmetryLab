@@ -4,6 +4,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 from pathlib import Path
 import secrets
+import shutil
 from threading import Event, Lock, Thread
 from urllib.parse import urlsplit, parse_qs
 from uuid import uuid4
@@ -12,6 +13,7 @@ from symmetrylab.agent_core.profile import research_profile
 from symmetrylab.communication.workbench import render_agent_report
 from symmetrylab.database.workbench import RunStore
 from symmetrylab.model.client import OpenAICompatibleClient
+from symmetrylab.literature.service import Literature
 
 DEFAULT_CONNECTION = {"base_url": "http://127.0.0.1:15721/v1", "model": "", "protocol": "responses",
                       "auth_mode": "cc_switch", "api_key_env": "SYMMETRYLAB_API_KEY"}
@@ -27,6 +29,24 @@ def connection_config(config):
     return result
 
 
+HINTS = {
+    "API key environment variable is not set": "Export the variable in the same terminal before starting the server (export SYMMETRYLAB_API_KEY=...), then restart it.",
+    "HTTP 401": "The service rejected the key. Check that the key is valid and belongs to this Base URL.",
+    "HTTP 403": "The service refused access. Check the key's permissions or account balance.",
+    "HTTP 404": "Wrong endpoint. Base URL must end at /v1 (without /responses or /chat/completions), and the protocol must be one the service supports.",
+    "HTTP 400": "The service rejected the request. Check the model ID spelling and try the other protocol.",
+    "HTTP 429": "Rate limited or out of quota at the provider.",
+    "connection failed or timed out": "The service did not answer. For CC Switch, confirm local routing is enabled on this port; for a remote service, check the URL and network/proxy.",
+    "returned no text content": "The service answered without text. Try the other protocol (Responses vs Chat Completions).",
+    "malformed JSON": "The response was not OpenAI-compatible JSON. Check the Base URL and protocol.",
+}
+
+
+def explain(message):
+    hint = next((v for k, v in HINTS.items() if k in message), "")
+    return message[:300] + (" — " + hint if hint else "")
+
+
 class Workbench:
     def __init__(self, root, config=None):
         self.store = RunStore(root)
@@ -37,6 +57,30 @@ class Workbench:
         self.cancel = Event()
         self.snapshots = {}
         self.probing = False
+        self.literature = Literature(Path(root).resolve().parent / "literature")
+        self.encoder_job = {"status": "idle"}
+
+    def prepare_encoder(self):
+        """Explicit, user-requested PhysBERT download in the background."""
+        with self.lock:
+            if self.encoder_job["status"] == "preparing":
+                return self.encoder_job
+            self.encoder_job = {"status": "preparing"}
+        def work():
+            from symmetrylab.literature.encoders import prepare_physbert
+            try:
+                result = prepare_physbert()
+                self.literature._encoder = None
+                job = {"status": "ready", "version": result["version"]}
+            except Exception:
+                job = {"status": "failed", "message": "PhysBERT could not be prepared. Install the 'physics' extra (pip install -e .[physics]) and check the network."}
+            with self.lock:
+                self.encoder_job = job
+        Thread(target=work, daemon=True).start()
+        return self.encoder_job
+
+    def literature_state(self):
+        return {**self.literature.state(), "encoder_job": self.encoder_job}
 
     def snapshot(self, identifier):
         with self.lock:
@@ -67,6 +111,9 @@ class Workbench:
         config = connection_config(request.get("connection", self.config))
         limits = limits_from({"limits": request.get("limits", {}), "research_profile": profile})
         client = OpenAICompatibleClient(config) if mode == "live" else None
+        style = self.literature.active_style() if request.get("use_style") else None
+        if request.get("use_style") and not style:
+            raise ValueError("No active voice profile. Build and enable it on the Paper survey page first.")
         with self.lock:
             if self.active or self.probing:
                 raise ValueError("a run or connection test is already active")
@@ -80,7 +127,8 @@ class Workbench:
                 self.snapshots[identifier] = state
         def worker():
             try:
-                run_agent(goal, self.store.folder(identifier), mode, {"limits": limits, **({"research_profile": profile} if profile["track"] != "legacy" else {})}, client, self.cancel.is_set, update)
+                extra = {"style_prompt": style["prompt"], "style_hash": style["hash"]} if style else {}
+                run_agent(goal, self.store.folder(identifier), mode, {"limits": limits, **extra, **({"research_profile": profile} if profile["track"] != "legacy" else {})}, client, self.cancel.is_set, update)
             except Exception:
                 # Never expose arbitrary exception text from infrastructure or credentials.
                 with self.lock:
@@ -91,6 +139,26 @@ class Workbench:
                     self.active = None
         Thread(target=worker, daemon=True).start()
         return {"run_id": identifier}
+
+    def clear(self, track):
+        """Delete stored runs (and therefore their lessons and preferences) for one workspace."""
+        if track not in {"theory", "experiment", "all"}:
+            raise ValueError("choose theory, experiment or all")
+        with self.lock:
+            if self.active or self.probing:
+                raise ValueError("wait for the current run or test to finish before clearing history")
+            removed = 0
+            for row in self.store.list():
+                row_track = "experiment" if row["track"] == "experiment" else "theory"
+                if track != "all" and row_track != track:
+                    continue
+                folder = self.store.folder(row["run_id"])
+                if folder.parent != self.store.root:
+                    continue
+                shutil.rmtree(folder)
+                self.snapshots.pop(row["run_id"], None)
+                removed += 1
+        return {"status": "cleared", "removed": removed}
 
     def probe(self, config):
         config = connection_config(config)
@@ -122,7 +190,7 @@ def make_server(port=8787, root="data/workbench", config=None):
             origin = self.headers.get("Origin")
             if host not in allowed or (origin and origin != "http://" + host):
                 return False
-            public_navigation = (not mutation and self.command == "GET" and urlsplit(self.path).path in {"/", "/experiment"}
+            public_navigation = (not mutation and self.command == "GET" and urlsplit(self.path).path in {"/", "/experiment", "/papers"}
                                  and self.headers.get("Sec-Fetch-Mode") == "navigate" and self.headers.get("Sec-Fetch-Dest") == "document")
             if self.headers.get("Sec-Fetch-Site") == "cross-site" and not public_navigation:
                 return False
@@ -149,7 +217,8 @@ def make_server(port=8787, root="data/workbench", config=None):
             if not self.safe_origin():
                 return self.send({"error": "local same-origin access required"}, 403)
             parts = urlsplit(self.path)
-            routes = {"/": ("index.html", "text/html"), "/experiment": ("index.html", "text/html"), "/app.js": ("app.js", "text/javascript"), "/style.css": ("style.css", "text/css")}
+            routes = {"/": ("index.html", "text/html"), "/experiment": ("index.html", "text/html"), "/app.js": ("app.js", "text/javascript"), "/style.css": ("style.css", "text/css"),
+                      "/papers": ("papers.html", "text/html"), "/papers.js": ("papers.js", "text/javascript")}
             if parts.path in routes:
                 name, mime = routes[parts.path]
                 return self.send((static / name).read_bytes(), kind=mime + "; charset=utf-8")
@@ -157,6 +226,8 @@ def make_server(port=8787, root="data/workbench", config=None):
                 return self.send({"token": app.token, "connection": app.config, "runs": app.listing()})
             if parts.path == "/api/runs":
                 return self.send(app.listing())
+            if parts.path == "/api/literature":
+                return self.send(app.literature_state())
             try:
                 path = parts.path.strip("/").split("/")
                 if len(path) in {3, 4} and path[:2] == ["api", "runs"]:
@@ -187,6 +258,29 @@ def make_server(port=8787, root="data/workbench", config=None):
                     return self.send(app.start(data), 202)
                 if self.path == "/api/connection/test":
                     return self.send(app.probe(data))
+                if self.path == "/api/runs/clear":
+                    return self.send(app.clear(data.get("track")))
+                if self.path.startswith("/api/literature/"):
+                    lit, action = app.literature, self.path.rsplit("/", 1)[-1]
+                    if action == "profile":
+                        lit.set_profile(data.get("keywords", []), data.get("papers", []), data.get("physics_only", True))
+                    elif action == "search":
+                        lit.search()
+                    elif action == "vote":
+                        lit.vote(data.get("paper_id"), data.get("vote"))
+                    elif action == "adopt":
+                        lit.adopt(data.get("term"))
+                    elif action == "style":
+                        lit.rebuild_style(data.get("enabled", True))
+                    elif action == "style-enabled":
+                        lit.set_style_enabled(bool(data.get("enabled")))
+                    elif action == "clear":
+                        lit.clear()
+                    elif action == "prepare-encoder":
+                        app.prepare_encoder()
+                    else:
+                        return self.send({"error": "not found"}, 404)
+                    return self.send(app.literature_state())
                 path = self.path.strip("/").split("/")
                 if len(path) == 4 and path[:2] == ["api", "runs"] and path[3] == "preference":
                     state = app.snapshot(path[2])
@@ -214,8 +308,10 @@ def make_server(port=8787, root="data/workbench", config=None):
                         app.cancel.set()
                     return self.send({"status": "cancellation_requested"})
                 return self.send({"error": "not found"}, 404)
-            except (ValueError, RuntimeError, OSError, KeyError, TypeError):
-                # Adapter errors are deliberately sanitized; use a helpful general message.
+            except (ValueError, RuntimeError) as exc:
+                # Project-authored messages never contain keys or response bodies; show the actual cause.
+                return self.send({"error": explain(str(exc))}, 400)
+            except (OSError, KeyError, TypeError):
                 return self.send({"error": "Request failed. Check the model ID, Base URL, selected protocol and local routing/key configuration; only one run or test can be active."}, 400)
     server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
     server.app = app
