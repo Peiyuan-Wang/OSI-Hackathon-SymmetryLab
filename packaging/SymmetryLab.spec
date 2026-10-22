@@ -8,7 +8,7 @@ from PyInstaller.utils.hooks import collect_submodules, copy_metadata
 root = os.path.abspath(os.path.join(SPECPATH, '..'))
 physics = os.environ.get('SYMMETRYLAB_LITE') != '1' and importlib.util.find_spec('sentence_transformers') is not None
 sys.path.insert(0, os.path.join(root, 'src'))
-hidden = collect_submodules('symmetrylab') + ['webview']
+hidden = collect_submodules('symmetrylab') + ['webview', 'smoke']
 # The interface files (HTML/CSS/JS) are read from symmetrylab/web/static at runtime.
 datas = [(os.path.join(root, 'src', 'symmetrylab', 'web', 'static'), os.path.join('symmetrylab', 'web', 'static'))]
 excludes = ['tkinter', 'matplotlib', 'IPython', 'notebook', 'pytest', 'playwright']
@@ -24,7 +24,7 @@ if physics:
 else:
     excludes += ['torch', 'transformers', 'sentence_transformers', 'tokenizers', 'sklearn', 'scipy']
 
-a = Analysis([os.path.join(SPECPATH, 'launch.py')], pathex=[os.path.join(root, 'src')], datas=datas,
+a = Analysis([os.path.join(SPECPATH, 'launch.py')], pathex=[os.path.join(root, 'src'), SPECPATH], datas=datas,
              hiddenimports=hidden, excludes=excludes, noarchive=False)
 pyz = PYZ(a.pure)
 exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name='SymmetryLab', console=False,

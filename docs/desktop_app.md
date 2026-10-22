@@ -29,3 +29,36 @@ Markdown/JSON/prompt downloads open a native Save dialog. Links to arXiv, DOIs a
 ## Verified
 
 Frozen Linux builds (lite and full) were started and driven in a browser: Connection save/test, offline experiment run, paper survey; the full build loaded PhysBERT and ranked live arXiv results. The macOS `.app` itself was not built here (no macOS in the build sandbox); `scripts/build_mac_app.sh` must be run on the Mac.
+
+## Windows portable app and automated packages
+
+Download the matching package from the repository's **Actions → Desktop packages** run.
+The Windows artifact contains a ZIP: extract it completely, then double-click
+`SymmetryLab/SymmetryLab.exe`. Keep `_internal` beside the executable. Python is bundled.
+Windows 10/11 x64 needs Microsoft Edge WebView2 Runtime; install it from Microsoft's
+WebView2 download page if absent. The preview is unsigned.
+
+For Apple Silicon Macs, extract `SymmetryLab-macos-arm64.zip` and open `SymmetryLab.app`.
+This architecture does not run on Intel Macs; build locally on Intel using the existing script.
+The workflow archives the app with `ditto` to preserve its executable permissions.
+
+Build on Windows with Python 3.12 installed:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/build_windows_app.ps1
+# Optional large package including PhysBERT dependencies:
+powershell -ExecutionPolicy Bypass -File scripts/build_windows_app.ps1 -Full
+```
+
+Pushes to main/review-fixes build the lightweight edition on native Windows and macOS runners.
+Manual workflow dispatch can include PhysBERT dependencies. Lite builds retain exact research,
+model connection, local UI and lexical paper ranking; PhysBERT requires a full build.
+Packages contain only code, interface assets and dependencies. They exclude API keys, local
+settings, paper history and research records. Configure Connection after first launch.
+Windows user data lives in `%APPDATA%\SymmetryLab`.
+
+The workflow runs regression checks and launches each frozen executable with an isolated
+`--smoke-test` directory. This checks packaged UI resources and completes an offline MnPt
+calculation and experiment design. It does not certify native window rendering on every machine.
+Artifacts include SHA256 files and are retained for 30 days. Full model weights are downloaded
+on request and are not included in either archive.

@@ -1,0 +1,69 @@
+name: Desktop packages
+on:
+  push:
+    branches: [main, review-fixes]
+    paths-ignore: ['docs/**', 'README.md']
+  workflow_dispatch:
+    inputs:
+      full:
+        description: Include the optional PhysBERT dependencies (large download)
+        type: boolean
+        default: false
+permissions:
+  contents: read
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            label: windows-x64
+            binary: dist/SymmetryLab/SymmetryLab.exe
+          - os: macos-14
+            label: macos-arm64
+            binary: dist/SymmetryLab.app/Contents/MacOS/SymmetryLab
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
+    env:
+      SYMMETRYLAB_LITE: ${{ inputs.full && '0' || '1' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          python -m pip install -r requirements.lock -r requirements-desktop.lock
+          python -m pip install --no-build-isolation --no-deps -e .
+      - name: Install optional physics dependencies
+        if: inputs.full
+        run: python -m pip install -r requirements-physics.lock
+      - name: Regression checks
+        run: |
+          python -m compileall -q src tests
+          python -m pytest -q
+      - name: Freeze desktop app
+        run: python -m PyInstaller --noconfirm --clean --distpath dist --workpath build/pyinstaller packaging/SymmetryLab.spec
+      - name: Exercise frozen app
+        run: python scripts/check_frozen.py "${{ matrix.binary }}"
+      - name: Archive Windows app
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          Copy-Item packaging/README-Windows.txt dist/SymmetryLab/README.txt
+          Compress-Archive -Path dist/SymmetryLab -DestinationPath dist/SymmetryLab-windows-x64.zip
+          (Get-FileHash dist/SymmetryLab-windows-x64.zip -Algorithm SHA256).Hash | Out-File dist/SymmetryLab-windows-x64.sha256
+      - name: Archive macOS app
+        if: runner.os == 'macOS'
+        run: |
+          ditto -c -k --sequesterRsrc --keepParent dist/SymmetryLab.app dist/SymmetryLab-macos-arm64.zip
+          shasum -a 256 dist/SymmetryLab-macos-arm64.zip > dist/SymmetryLab-macos-arm64.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SymmetryLab-${{ matrix.label }}-${{ inputs.full && 'full' || 'lite' }}
+          path: |
+            dist/*.zip
+            dist/*.sha256
+          if-no-files-found: error
+          retention-days: 30

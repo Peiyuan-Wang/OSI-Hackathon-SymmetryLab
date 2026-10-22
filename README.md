@@ -10,7 +10,11 @@ The **v0.3 preview** preserves the original theory layout and adds a matching ex
 
 Read [the discovery benchmark and RSI design](docs/design/discovery_benchmark_rsi.md) for scientific definitions, source boundaries, the benchmark collection plan, controlled experiments and remaining work. This is a research prototype; sample-specific magnetic structure, growth feasibility, quantitative experimental signals and novel discoveries are not established.
 
-## Desktop app (macOS)
+## Desktop app (Windows and macOS)
+
+Download the matching ZIP from **GitHub Actions → Desktop packages**. On Windows, extract the whole folder and double-click `SymmetryLab.exe`; on Apple Silicon Mac, extract and open `SymmetryLab.app`. Default packages omit the optional PhysBERT runtime. See [Desktop app](docs/desktop_app.md) for requirements and full builds.
+
+Build locally on macOS:
 
 ```bash
 scripts/build_mac_app.sh && open dist/SymmetryLab.app
