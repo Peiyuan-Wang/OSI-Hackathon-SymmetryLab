@@ -18,7 +18,7 @@ Demo mode uses a clearly identified simulated policy with the same tool executio
 
 ## Local UI and storage
 
-Bind only to 127.0.0.1. Browser mutations require a per-server request token and same-origin checks. The UI uses local assets and renders model text as text, not HTML. There is one active run at a time. Each run has a generated ID and its own folder under data/workbench; URLs cannot name arbitrary filesystem paths.
+Bind only to 127.0.0.1. Browser mutations require a per-server request token and same-origin checks. Top-level document navigation from an external link may open `/` and `/materials`; cross-site API reads, embedded requests and mutations remain blocked. Host and explicit Origin validation also apply to public-page navigation. The UI uses local assets and renders model text as text, not HTML. There is one active run at a time. Each run has a generated ID and its own folder under data/workbench; URLs cannot name arbitrary filesystem paths.
 
 The interface supports connection settings, a research question, live/demo selection, progress, cancellation, plans, hypotheses, tool observations, candidate details, exact evidence, three English report views, and report/JSON downloads. API keys stay in server environment variables. Persist state snapshots and event logs so completed and interrupted runs can be inspected after a server restart; automatic continuation of an interrupted run is not yet supported.
 

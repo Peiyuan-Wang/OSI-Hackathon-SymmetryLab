@@ -1,5 +1,9 @@
 # Implementation Status
 
+## Public-page navigation fix, 2026-10-22
+
+External chat/browser links send cross-site navigation headers. The server now permits top-level document navigation to `/` and `/materials` while retaining Host/Origin validation and blocking cross-site API reads, embedded requests and mutations. Regression tests cover both pages and the protected request types. The full receiving-machine suite passes **90 tests**; source compilation and whitespace checks pass. Restart an existing server after a source update so its Python route handlers load the new version.
+
 ## Material-explorer integration, 2026-10-22
 
 The additive `/materials` page includes 50 unranked research directions, explicit unknown SG/MSG/SSG fields, an exact Cartesian linear AHE constraint checker with checked certificates, offline trace and JSON export. Its optional model-proposal endpoint uses the existing CC Switch/custom-provider adapter and keeps model text unverified. The original workbench is preserved. Material/SSG lookup and actual literature retrieval remain unconnected adapters.

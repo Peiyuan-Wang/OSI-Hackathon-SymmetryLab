@@ -144,7 +144,15 @@ def make_server(port=8787, root="data/workbench", config=None):
             origin = self.headers.get("Origin")
             if host not in allowed or (origin and origin != "http://" + host):
                 return False
-            if self.headers.get("Sec-Fetch-Site") == "cross-site":
+            public_navigation = (
+                not mutation and self.command == "GET"
+                and urlsplit(self.path).path in {"/", "/materials"}
+                and self.headers.get("Sec-Fetch-Mode") == "navigate"
+                and self.headers.get("Sec-Fetch-Dest") == "document"
+            )
+            # Links from chat or another site may open the public HTML pages.
+            # API reads, embedded requests and mutations retain origin checks.
+            if self.headers.get("Sec-Fetch-Site") == "cross-site" and not public_navigation:
                 return False
             return not mutation or secrets.compare_digest(self.headers.get("X-SymmetryLab-Token", ""), app.token)
 

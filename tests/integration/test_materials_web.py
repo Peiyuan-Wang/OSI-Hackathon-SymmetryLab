@@ -13,11 +13,12 @@ def material_server(tmp_path):
     thread.start()
     base = f"http://127.0.0.1:{server.server_port}"
     opener = build_opener(ProxyHandler({}))
-    def request(path, body=None, token=True):
-        headers = {"Content-Type": "application/json"}
+    def request(path, body=None, token=True, headers=None):
+        request_headers = {"Content-Type": "application/json"}
         if token:
-            headers["X-SymmetryLab-Token"] = server.app.token
-        req = Request(base + path, data=json.dumps(body).encode() if body is not None else None, headers=headers)
+            request_headers["X-SymmetryLab-Token"] = server.app.token
+        request_headers.update(headers or {})
+        req = Request(base + path, data=json.dumps(body).encode() if body is not None else None, headers=request_headers)
         with opener.open(req, timeout=8) as response:
             return response.read()
     yield request, server.app
@@ -37,6 +38,25 @@ def test_new_routes_and_legacy_page(material_server):
     with pytest.raises(HTTPError) as error:
         request("/api/materials/explore", {"material": "Example"}, token=False)
     assert error.value.code == 403
+
+
+@pytest.mark.parametrize("page", ["/", "/materials"])
+def test_external_link_navigation_only_opens_public_pages(material_server, page):
+    request, _ = material_server
+    navigation = {"Sec-Fetch-Site": "cross-site", "Sec-Fetch-Mode": "navigate", "Sec-Fetch-Dest": "document"}
+    assert b"SymmetryLab" in request(page, token=False, headers=navigation)
+    blocked = [
+        ("/api/bootstrap", None, navigation),
+        ("/api/materials/catalog", None, navigation),
+        ("/api/materials/explore", {"material": "Example"}, navigation),
+        (page, None, dict(navigation, **{"Sec-Fetch-Mode": "no-cors", "Sec-Fetch-Dest": "image"})),
+        (page, None, dict(navigation, Origin="https://attacker.example")),
+        (page, None, dict(navigation, Host="attacker.example")),
+    ]
+    for path, body, headers in blocked:
+        with pytest.raises(HTTPError) as error:
+            request(path, body, headers=headers)
+        assert error.value.code == 403
 
 
 def test_optional_api_connection_and_plan_keep_evidence_frozen(material_server, monkeypatch):
