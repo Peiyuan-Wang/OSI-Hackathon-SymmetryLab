@@ -1,9 +1,5 @@
 # SymmetryLab
 
-## Material explorer extension (local handoff)
-
-Open **http://127.0.0.1:8787/materials** after starting the server. The original mathematics workbench remains at `/`. The extension adds 50 research-direction entries, material/phase inputs, an exact linear AHE check for supplied Cartesian point-group operations, explicit missing-data states, and an optional model-planning connection through **CC Switch or a custom compatible API**. No material-to-SSG database or live literature retrieval is connected. See [Material Explorer handoff](docs/material_explorer.md) for model configuration, scientific limits, adapter contracts and the 88-test validation checkpoint.
-
 **A Verifiable Self-Improving Agent for Condensed Matter Theory**
 
 SymmetryLab is an initial research-agent implementation for a precise question: given rational momentum shifts that satisfy the group relations, can one common change of momentum origin remove the shifts of every generator?
@@ -14,6 +10,10 @@ Testable conjecture → Exact computation → Verified counterexample
 ```
 
 Version **0.2.0** adds an English graphical workbench, model-driven planning and candidate generation, iterative mathematical tools, and a CC Switch connection preset. It includes offline demonstrations, exact certificates, replay, audience reports, and a benchmark. Physical materials and SSG realizations have not been validated, and no reinforcement-learning training has been performed.
+
+## Material explorer extension
+
+Open **http://127.0.0.1:8787/materials** after starting the server. The original mathematics workbench remains at `/`. The extension adds 50 research-direction entries, material/phase inputs, an exact linear AHE check for supplied Cartesian point-group operations, explicit missing-data states, and an optional model-planning connection through **CC Switch or a custom compatible API**. No material-to-SSG database or live literature retrieval is connected. See [Material Explorer](docs/material_explorer.md) for model configuration, scientific limits, adapter contracts and the 88-test validation checkpoint.
 
 ## Installation
 

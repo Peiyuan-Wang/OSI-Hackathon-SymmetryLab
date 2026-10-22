@@ -22,6 +22,8 @@ def test_http_adapter_and_no_secret_in_response(monkeypatch):
             seen["url"] = request.full_url
             seen["payload"] = json.loads(request.data)
             seen["auth_present"] = bool(request.get_header("Authorization"))
+            seen["user_agent"] = request.get_header("User-agent")
+            seen["timeout"] = timeout
             return Response()
 
     monkeypatch.setattr(module, "build_opener", lambda handler: Opener())
@@ -29,6 +31,7 @@ def test_http_adapter_and_no_secret_in_response(monkeypatch):
     answer = client.complete([{"role": "user", "content": "public toy"}], 100)
     assert seen["url"] == "https://example.com/v1/chat/completions"
     assert seen["payload"]["max_tokens"] == 100 and seen["auth_present"]
+    assert seen["user_agent"] == "SymmetryLab/0.2" and seen["timeout"] == 60
     assert answer["usage"]["total_tokens"] == 12
     assert "test-secret" not in json.dumps(answer)
     assert module.NoRedirect().redirect_request(None, None, 302, "", {}, "https://other.example") is None
@@ -58,6 +61,7 @@ def test_cc_switch_responses_uses_placeholder_and_bypasses_proxy(monkeypatch):
     class Opener:
         def open(self,request,timeout):
             seen['url']=request.full_url; seen['body']=json.loads(request.data); seen['auth']=request.get_header('Authorization')
+            seen['user_agent']=request.get_header('User-agent'); seen['timeout']=timeout
             return Response()
     def build(*handlers):
         seen['handlers']=handlers
@@ -70,6 +74,7 @@ def test_cc_switch_responses_uses_placeholder_and_bypasses_proxy(monkeypatch):
     assert seen['body']['instructions']=='Be exact'
     assert seen['body']['max_output_tokens']==64 and seen['body']['store'] is False
     assert seen['auth']=='Bearer PROXY_MANAGED'
+    assert seen['user_agent']=='SymmetryLab/0.2' and seen['timeout']==60
     assert any(isinstance(h,module.ProxyHandler) and not h.proxies for h in seen['handlers'])
 
 

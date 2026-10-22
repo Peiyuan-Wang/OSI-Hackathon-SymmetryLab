@@ -31,7 +31,7 @@ $('start').onclick = async () => {
     selected = result.run_id; activeRun = selected; reportVersion = ''; await refresh();
   } catch (error) { notice(error.message); $('start').disabled = Boolean(activeRun); }
 };
-$('stop').onclick = async () => { try { await api(`/api/runs/${selected}/cancel`, {}); notice('Stop requested. Any in-flight model request may take up to 30 seconds to return.'); $('stop').disabled = true; } catch (e) { notice(e.message); } };
+$('stop').onclick = async () => { try { await api(`/api/runs/${selected}/cancel`, {}); notice('Stop requested. Any in-flight model request may take up to 60 seconds to return.'); $('stop').disabled = true; } catch (e) { notice(e.message); } };
 function details(parent, title, value) { const box = el('details'); box.append(el('summary',title),el('pre',JSON.stringify(value,null,2))); parent.append(box); }
 function renderTimeline(state) {
   $('plan').replaceChildren(...state.plan.map(step => el('li',step))); $('plan').hidden = !state.plan.length;

@@ -4,6 +4,14 @@
 
 Use Python 3.11 or later. Create a fresh virtual environment on the receiving computer; do not copy the sender's environment.
 
+On macOS or Linux, use the existing project environment after installation:
+
+```bash
+.venv/bin/python -m symmetrylab serve
+```
+
+On Windows, install and run with PowerShell:
+
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.lock
@@ -35,6 +43,8 @@ Open `http://127.0.0.1:8787/materials`. The original workbench remains at `/` an
 `config/materials-relay.example.json` is a connection-only preset accepted by `serve --config`. Replace its placeholder model ID before testing. API configuration is shared in server memory with the original workbench; do not run competing connection probes or research jobs.
 
 The initial handoff used simulated providers. A subsequent local setup on 2026-10-22 successfully tested a short Responses generation against the user's relay and requested model. Private credentials and local launch settings remain outside the source and handoff archive. The client sends a SymmetryLab User-Agent and allows 60 seconds for relay responses. Installing CC Switch does not provide a key, balance or a working route.
+
+That live result is reported by the sender. The receiving macOS integration reran the automated suite, not the live upstream request. The direct-relay result does not by itself validate CC Switch forwarding on another machine.
 
 ## SSG and literature extension contracts
 
@@ -68,4 +78,4 @@ SSG reference: https://arxiv.org/abs/2307.10364
 
 On the receiving development Windows environment, Python UTF-8 mode is needed for the legacy test that reads reports without an explicit encoding. With `PYTHONUTF8=1`, all **88 tests passed** after the extension (66 original plus 22 new parameterized cases/tests). Compilation and JavaScript syntax checks passed. Tests cover known axial-vector constraints, combined generators, independently checked certificates, unsupported closures, unverified material labels, unknown information, HTTP token protection, preserved legacy routes, and model-proposal/evidence separation with a simulated provider.
 
-This is local ZIP-based development. No Git clone, push, or remote synchronization was completed because the user's GitHub account could not authorize the credential manager. The repository owner must inspect current remote changes and merge this delivery into the latest branch, resolving any overlap before committing or pushing.
+The sender delivered files because GitHub authentication was unavailable in their environment. The receiving integration verified the manifest and common baseline, imported the 15 changed paths, and reran all **88 tests** on macOS with Python 3.12.7. The original benchmark still returns **30/30** correct labels and **27/27** valid certificates. The original source delivery is retained outside the repository; its prebuilt wheel, preview image, and machine-specific assets were not imported.
