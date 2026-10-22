@@ -1,0 +1,45 @@
+{
+  "packet_id": "TASTE-EXAMPLE-001",
+  "status": "annotation_template_no_labels",
+  "researcher_profile": {
+    "selected_paper_ids": [],
+    "interest_keywords": [
+      "spin-space groups",
+      "minimal models"
+    ],
+    "explicit_constraints": []
+  },
+  "source_cutoff": "Set before collecting candidate proposals",
+  "split_unit": "mechanism_family_and_paper_cluster",
+  "left": {
+    "title": "A narrowly falsifiable mechanism",
+    "evidence_ids": [],
+    "next_test": "Specify a bounded calculation"
+  },
+  "right": {
+    "title": "A distinct mechanism with a different risk profile",
+    "evidence_ids": [],
+    "next_test": "Specify a bounded calculation"
+  },
+  "annotation": {
+    "choice": null,
+    "reason": null,
+    "expert_id": null,
+    "conflicts": [],
+    "blind_order": null
+  },
+  "axes": [
+    "mechanistic_depth",
+    "testability",
+    "tractability",
+    "novelty_relative_to_sources",
+    "personal_fit",
+    "learning_value_of_failure"
+  ],
+  "follow_up": {
+    "hours_budget": null,
+    "experiment_outcome": null,
+    "decision_changed": null
+  },
+  "warning": "Never fill the human preference label with an LLM judgment or use test packets for memory."
+}

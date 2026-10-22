@@ -12,6 +12,9 @@ INTRO = {
 def render_agent_report(state, audience="researcher"):
     if audience not in INTRO:
         raise ValueError("unknown audience")
+    if state.get("research_profile", {}).get("track", "legacy") != "legacy":
+        from .discovery import render_discovery
+        return render_discovery(state, audience)
     lines = ["# SymmetryLab Research Report", "", f"Mode: {state['mode']} | Run: {state['run_id']} | Status: {state['status']}", "",
              "## Research question", "", state["goal"], "", "## Reading guide", "", INTRO[audience], "",
              "Scope: abstract public toy actions only. Finite tests do not prove general theorems or physical realization.", ""]

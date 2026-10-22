@@ -15,3 +15,6 @@ data/*
 *.sqlite*
 *.db
 *.log
+
+# Local diagnostics and evaluation outputs; may contain provider responses.
+work/

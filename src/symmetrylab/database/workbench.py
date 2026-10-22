@@ -25,7 +25,7 @@ class RunStore:
         for path in self.root.glob("*/state.json"):
             try:
                 state = self.read(path.parent.name)
-                rows.append({k: state[k] for k in ("run_id", "goal", "status", "mode", "created_at")})
+                rows.append({**{k: state[k] for k in ("run_id", "goal", "status", "mode", "created_at")}, "track": state.get("research_profile", {}).get("track", "legacy")})
             except (ValueError, OSError, KeyError):
                 continue
         return sorted(rows, key=lambda row: row["created_at"], reverse=True)[:100]

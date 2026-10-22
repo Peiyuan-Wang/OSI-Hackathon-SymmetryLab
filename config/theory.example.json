@@ -1,0 +1,16 @@
+{
+  "base_url": "http://127.0.0.1:15721/v1",
+  "model": "SET_YOUR_MODEL",
+  "protocol": "responses",
+  "auth_mode": "cc_switch",
+  "research_profile": {
+    "track": "theory",
+    "material": "",
+    "conditions": "",
+    "instruments": "",
+    "keywords": "Spin-space groups; minimal mechanisms; momentum-space symmetry",
+    "papers": "",
+    "taste_notes": "",
+    "reuse_lessons": true
+  }
+}

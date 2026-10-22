@@ -2,14 +2,11 @@
 
 **A Verifiable Self-Improving Agent for Condensed Matter Theory**
 
-SymmetryLab is an initial research-agent implementation for a precise question: given rational momentum shifts that satisfy the group relations, can one common change of momentum origin remove the shifts of every generator?
+SymmetryLab supports two research workflows: experimental goals for a named material, and theory exploration guided by selected papers and interests. Exact tools check bounded models; source-linked interpretations, research taste, material assignments and experimental proposals retain their own verification status.
 
-```text
-Testable conjecture → Exact computation → Verified counterexample
-                   → Evidence-backed lesson → Revision → Scientific report
-```
+The **v0.3 preview** preserves the original theory layout and adds a matching experimental workspace for **L10 MnPt Neel-axis detection**. It includes public metadata retrieval, conditional orientation calculations, counterexample search, paper-linked taste profiles, human preference feedback and rechecked cross-run strategies. Live model research requires a configured provider. Offline walkthroughs use scripted decisions.
 
-Version **0.2.0** adds an English graphical workbench, model-driven planning and candidate generation, iterative mathematical tools, and a CC Switch connection preset. It includes offline demonstrations, exact certificates, replay, audience reports, and a benchmark. Physical materials and SSG realizations have not been validated, and no reinforcement-learning training has been performed.
+Read [the discovery benchmark and RSI design](docs/design/discovery_benchmark_rsi.md) for scientific definitions, source boundaries, the benchmark collection plan, controlled experiments and remaining work. This is a research prototype; sample-specific magnetic structure, growth feasibility, quantitative experimental signals and novel discoveries are not established.
 
 ## Installation
 
@@ -29,9 +26,17 @@ On Windows, replace `.venv/bin/python` with `.venv\Scripts\python.exe`. Dependen
 .venv/bin/python -m symmetrylab serve
 ```
 
-Open **http://127.0.0.1:8787**. Select **Offline demonstration**, then **Start research** to try the complete loop without a key. This mode uses a simulated policy and real exact mathematics; it is explicitly labeled throughout the interface.
+Open **http://127.0.0.1:8787/** for theory or **http://127.0.0.1:8787/experiment** for experimental research. Select **Offline demonstration**, then **Start research** to try the complete loop without a key. This mode uses a simulated policy and real exact mathematics; it is explicitly labeled throughout the interface.
 
 The workbench displays the evolving plan, hypotheses, tool calls, candidate matrices, exact certificates and counterexample memory. Switch the report audience or download Markdown and evidence JSON. Completed runs remain in local history. **Stop run** requests cooperative cancellation; an in-flight model request may take up to its network timeout to return. Keep the terminal running; Ctrl+C stops the server.
+
+### Choose a research workflow
+
+- **Experimental research:** enter the material, observational goal, sample conditions and instruments. The default MnPt walkthrough compares candidate axes, exposes ambiguous geometries and produces a conditional neutron-measurement plan. Its normalized factors are not absolute intensities or verified accessible reflections.
+- **Theory exploration:** enter an interest direction, keywords and selected paper titles/DOIs/excerpts. A text or Markdown reading list can be imported locally. Live mode can infer preferences with source excerpts and retrieve DOI metadata. After a run, compare the first two proposed directions and explain your choice; later runs with the same selected-paper context can use that feedback.
+- **Offline demonstration:** fixed walkthroughs exercise actual exact tools without a model or network. **Live model research** performs question-dependent planning and bounded public retrieval.
+
+Use only paper text you intend to share with the chosen provider. The application never scans paper folders automatically. Model-generated prose remains unverified even when it cites a checked calculation.
 
 ### Connect through CC Switch
 
@@ -44,7 +49,7 @@ CC Switch injects the upstream credential. SymmetryLab sends a local placeholder
 
 For a direct custom provider, select **Custom OpenAI-compatible service**, enter its Base URL/model, choose **Chat Completions** or **Responses**, and set `SYMMETRYLAB_API_KEY` in the environment used to start the server. The interface accepts an environment-variable name, never the key itself.
 
-**Validation boundary:** protocol adapters and adaptive behavior pass simulated-service tests. A real provider has not yet been validated on this machine; the local CC Switch listener was not running at the validation checkpoint.
+**Validation boundary:** adapters and adaptive behavior are covered by tests with model doubles. The new workflow has not yet been validated against a real model provider. See the dated implementation status for source-service and browser checks.
 
 ## Verify a problem
 

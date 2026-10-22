@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "symmetrylab"
-version = "0.2.0"
+version = "0.3.0"
 description = "Verifiable counterexample-driven research on torus affine symmetries"
 requires-python = ">=3.11"
 dependencies = ["sympy==1.14.0"]

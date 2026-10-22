@@ -1,0 +1,16 @@
+{
+  "base_url": "http://127.0.0.1:15721/v1",
+  "model": "SET_YOUR_MODEL",
+  "protocol": "responses",
+  "auth_mode": "cc_switch",
+  "research_profile": {
+    "track": "experiment",
+    "material": "L10 MnPt",
+    "conditions": "Sample form, temperature, substrate and strain not supplied",
+    "instruments": "To be confirmed with the researcher",
+    "keywords": "",
+    "papers": "",
+    "taste_notes": "",
+    "reuse_lessons": true
+  }
+}

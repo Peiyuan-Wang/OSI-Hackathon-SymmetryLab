@@ -1,0 +1,458 @@
+{
+  "version": "1",
+  "split": "public_seed_only",
+  "cases": [
+    {
+      "id": "O01",
+      "family": "axis_vs_plane",
+      "kernel": "orientation",
+      "inputs": {
+        "directions": [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "probes": [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ]
+      },
+      "expected": {
+        "factors": [
+          [
+            "0",
+            "1"
+          ],
+          [
+            "1",
+            "0"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "O02",
+      "family": "sign_degeneracy",
+      "kernel": "orientation",
+      "inputs": {
+        "directions": [
+          [
+            1,
+            1,
+            0
+          ],
+          [
+            -1,
+            -1,
+            0
+          ]
+        ],
+        "probes": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            1,
+            1,
+            0
+          ]
+        ]
+      },
+      "expected": {
+        "identical_pairs": [
+          [
+            "n1",
+            "n2"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "O03",
+      "family": "insufficient_geometry",
+      "kernel": "orientation",
+      "inputs": {
+        "directions": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "probes": [
+          [
+            0,
+            0,
+            1
+          ]
+        ]
+      },
+      "expected": {
+        "identical_pairs": [
+          [
+            "n1",
+            "n2"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "O04",
+      "family": "nuisance_scale",
+      "kernel": "orientation",
+      "inputs": {
+        "directions": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            1
+          ]
+        ],
+        "probes": [
+          [
+            0,
+            0,
+            1
+          ]
+        ]
+      },
+      "expected": {
+        "identical_pairs": [],
+        "unknown_common_scale_pairs": [
+          [
+            "n1",
+            "n2"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "O05",
+      "family": "zero_signal",
+      "kernel": "orientation",
+      "inputs": {
+        "directions": [
+          [
+            0,
+            0,
+            1
+          ],
+          [
+            1,
+            0,
+            1
+          ]
+        ],
+        "probes": [
+          [
+            0,
+            0,
+            1
+          ]
+        ]
+      },
+      "expected": {
+        "unknown_common_scale_pairs": []
+      }
+    },
+    {
+      "id": "O06",
+      "family": "domain_ambiguity",
+      "kernel": "orientation",
+      "inputs": {
+        "directions": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ],
+          [
+            1,
+            1,
+            0
+          ]
+        ],
+        "probes": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ]
+        ],
+        "domains": [
+          [
+            "1/2",
+            "1/2",
+            0
+          ]
+        ]
+      },
+      "expected": {
+        "identical_pairs": [
+          [
+            "n3",
+            "domain_mix1"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "O07",
+      "family": "domain_discrimination",
+      "kernel": "orientation",
+      "inputs": {
+        "directions": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ],
+          [
+            1,
+            1,
+            0
+          ]
+        ],
+        "probes": [
+          [
+            1,
+            0,
+            0
+          ],
+          [
+            0,
+            1,
+            0
+          ],
+          [
+            1,
+            1,
+            0
+          ]
+        ],
+        "domains": [
+          [
+            "1/2",
+            "1/2",
+            0
+          ]
+        ]
+      },
+      "expected": {
+        "identical_pairs": []
+      }
+    },
+    {
+      "id": "O08",
+      "family": "rational_geometry",
+      "kernel": "orientation",
+      "inputs": {
+        "directions": [
+          [
+            "1/2",
+            0,
+            0
+          ],
+          [
+            0,
+            "2/3",
+            0
+          ]
+        ],
+        "probes": [
+          [
+            1,
+            1,
+            0
+          ]
+        ]
+      },
+      "expected": {
+        "factors": [
+          [
+            "1/2"
+          ],
+          [
+            "1/2"
+          ]
+        ]
+      }
+    },
+    {
+      "id": "O09",
+      "family": "invalid_zero",
+      "kernel": "orientation",
+      "inputs": {
+        "directions": [
+          [
+            0,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "probes": [
+          [
+            1,
+            0,
+            0
+          ]
+        ]
+      },
+      "expected": {
+        "error": "invalid_input"
+      }
+    },
+    {
+      "id": "O10",
+      "family": "invalid_float",
+      "kernel": "orientation",
+      "inputs": {
+        "directions": [
+          [
+            1.0,
+            0,
+            0
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "probes": [
+          [
+            1,
+            0,
+            0
+          ]
+        ]
+      },
+      "expected": {
+        "error": "invalid_input"
+      }
+    },
+    {
+      "id": "O11",
+      "family": "invalid_domains",
+      "kernel": "orientation",
+      "inputs": {
+        "directions": [
+          [
+            0,
+            1,
+            0
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "probes": [
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "domains": [
+          [
+            1,
+            1
+          ]
+        ]
+      },
+      "expected": {
+        "error": "invalid_input"
+      }
+    },
+    {
+      "id": "A01",
+      "family": "invalid_basis",
+      "kernel": "axis",
+      "inputs": {
+        "directions": [
+          [
+            0,
+            1,
+            0
+          ],
+          [
+            1,
+            0,
+            0
+          ]
+        ],
+        "rotations": [
+          [
+            [
+              2,
+              0,
+              0
+            ],
+            [
+              0,
+              1,
+              0
+            ],
+            [
+              0,
+              0,
+              1
+            ]
+          ]
+        ]
+      },
+      "expected": {
+        "error": "invalid_input"
+      }
+    }
+  ]
+}

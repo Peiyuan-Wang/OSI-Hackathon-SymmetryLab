@@ -19,6 +19,8 @@ def test_http_adapter_and_no_secret_in_response(monkeypatch):
 
     class Opener:
         def open(self, request, timeout):
+            seen["timeout"] = timeout
+            seen["user_agent"] = request.get_header("User-agent")
             seen["url"] = request.full_url
             seen["payload"] = json.loads(request.data)
             seen["auth_present"] = bool(request.get_header("Authorization"))
@@ -29,6 +31,7 @@ def test_http_adapter_and_no_secret_in_response(monkeypatch):
     answer = client.complete([{"role": "user", "content": "public toy"}], 100)
     assert seen["url"] == "https://example.com/v1/chat/completions"
     assert seen["payload"]["max_tokens"] == 100 and seen["auth_present"]
+    assert seen["timeout"] == 60 and seen["user_agent"] == "SymmetryLab/0.3"
     assert answer["usage"]["total_tokens"] == 12
     assert "test-secret" not in json.dumps(answer)
     assert module.NoRedirect().redirect_request(None, None, 302, "", {}, "https://other.example") is None

@@ -21,3 +21,7 @@ The implementation uses the exact fallback in plan Section 5.2: restrict theta t
 The independent certificate check uses the following complete-grid bound. If Q is a common denominator of q, r is the rank of B, and L is the least common multiple of the absolute values of all nonzero r-by-r minors, a feasible vertex has a denominator dividing QL. This grid can therefore check existence. Merely using the input q denominator would not be complete. The checker caps the grid at 250,000 points and does not claim verification when the cap is exceeded.
 
 A Smith normal form backend with U/V transformations, a parameterization of the full solution set, and complete H¹ classification are not implemented. Rank is diagnostic information. All inputs describe abstract affine toy actions; no physical SSG or material realization has been verified.
+
+## Conditional experimental kernels (v0.3 preview)
+
+`verifier/orientation.py` adds rational Cartesian director and collinear unpolarized-neutron calculations, separate from the torus convention above. It checks D=n n^T/|n|² under supplied single-domain orthogonal operations and P(n,Q)=1-(n·Q)²/(|n|²|Q|²). Independent checks use Rn=±n and the cross-product norm respectively. See the [discovery specification](design/discovery_benchmark_rsi.md) for nuisance scales, domain mixtures, finite identifiability and physical limitations. These kernels do not establish magnetic group assignment, propagation vectors, allowed reflections, energy stability or experimental signal size.

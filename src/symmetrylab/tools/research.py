@@ -113,6 +113,9 @@ class ResearchTools:
 
     def call(self, name, arguments):
         self.remaining()
+        from symmetrylab.tools.discovery import DiscoveryTools
+        if name in DiscoveryTools.NAMES:
+            return DiscoveryTools(self.state, self.remaining).call(name, arguments)
         if name not in {"register_candidate", "check_relations", "solve_gauge", "compare_gauge", "scan_shifts", "test_claim"}:
             raise ValueError("tool is not registered")
         if not isinstance(arguments, dict):

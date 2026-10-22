@@ -8,6 +8,7 @@ from threading import Event, Lock, Thread
 from urllib.parse import urlsplit, parse_qs
 from uuid import uuid4
 from symmetrylab.agent_core.workbench import run_agent, limits_from
+from symmetrylab.agent_core.profile import research_profile
 from symmetrylab.communication.workbench import render_agent_report
 from symmetrylab.database.workbench import RunStore
 from symmetrylab.model.client import OpenAICompatibleClient
@@ -51,7 +52,7 @@ class Workbench:
         rows = {r["run_id"]: r for r in self.store.list()}
         with self.lock:
             for identifier, s in self.snapshots.items():
-                rows[identifier] = {k: s[k] for k in ("run_id", "goal", "status", "mode", "created_at")}
+                rows[identifier] = {**{k: s[k] for k in ("run_id", "goal", "status", "mode", "created_at")}, "track": s.get("research_profile", {}).get("track", "legacy")}
             active = self.active
         for row in rows.values():
             if row["status"] == "running" and row["run_id"] != active:
@@ -62,8 +63,9 @@ class Workbench:
         mode, goal = request.get("mode", "demo"), request.get("goal", "")
         if mode not in {"demo", "live"} or not isinstance(goal, str) or not 1 <= len(goal.strip()) <= 4000:
             raise ValueError("select demo/live and enter a research question (1–4000 characters)")
+        profile = research_profile(request.get("research_profile"))
         config = connection_config(request.get("connection", self.config))
-        limits = limits_from({"limits": request.get("limits", {})})
+        limits = limits_from({"limits": request.get("limits", {}), "research_profile": profile})
         client = OpenAICompatibleClient(config) if mode == "live" else None
         with self.lock:
             if self.active or self.probing:
@@ -72,13 +74,13 @@ class Workbench:
             self.active = identifier
             self.cancel = Event()
             self.config = config
-            self.snapshots[identifier] = {"run_id": identifier, "goal": goal, "mode": mode, "status": "running", "created_at": "pending"}
+            self.snapshots[identifier] = {"run_id": identifier, "goal": goal, "mode": mode, "status": "running", "created_at": "pending", "research_profile": profile}
         def update(state):
             with self.lock:
                 self.snapshots[identifier] = state
         def worker():
             try:
-                run_agent(goal, self.store.folder(identifier), mode, {"limits": limits}, client, self.cancel.is_set, update)
+                run_agent(goal, self.store.folder(identifier), mode, {"limits": limits, **({"research_profile": profile} if profile["track"] != "legacy" else {})}, client, self.cancel.is_set, update)
             except Exception:
                 # Never expose arbitrary exception text from infrastructure or credentials.
                 with self.lock:
@@ -92,7 +94,7 @@ class Workbench:
 
     def probe(self, config):
         config = connection_config(config)
-        client = OpenAICompatibleClient(config, timeout=15)
+        client = OpenAICompatibleClient(config, timeout=60)
         with self.lock:
             if self.active or self.probing:
                 raise ValueError("wait for the current run or test to finish")
@@ -120,7 +122,9 @@ def make_server(port=8787, root="data/workbench", config=None):
             origin = self.headers.get("Origin")
             if host not in allowed or (origin and origin != "http://" + host):
                 return False
-            if self.headers.get("Sec-Fetch-Site") == "cross-site":
+            public_navigation = (not mutation and self.command == "GET" and urlsplit(self.path).path in {"/", "/experiment"}
+                                 and self.headers.get("Sec-Fetch-Mode") == "navigate" and self.headers.get("Sec-Fetch-Dest") == "document")
+            if self.headers.get("Sec-Fetch-Site") == "cross-site" and not public_navigation:
                 return False
             return not mutation or secrets.compare_digest(self.headers.get("X-SymmetryLab-Token", ""), app.token)
 
@@ -145,7 +149,7 @@ def make_server(port=8787, root="data/workbench", config=None):
             if not self.safe_origin():
                 return self.send({"error": "local same-origin access required"}, 403)
             parts = urlsplit(self.path)
-            routes = {"/": ("index.html", "text/html"), "/app.js": ("app.js", "text/javascript"), "/style.css": ("style.css", "text/css")}
+            routes = {"/": ("index.html", "text/html"), "/experiment": ("index.html", "text/html"), "/app.js": ("app.js", "text/javascript"), "/style.css": ("style.css", "text/css")}
             if parts.path in routes:
                 name, mime = routes[parts.path]
                 return self.send((static / name).read_bytes(), kind=mime + "; charset=utf-8")
@@ -174,7 +178,7 @@ def make_server(port=8787, root="data/workbench", config=None):
                 return self.send({"error": "valid local request token required"}, 403)
             try:
                 length = int(self.headers.get("Content-Length", "0"))
-                if not 0 < length <= 24000 or self.headers.get("Content-Type", "").split(";")[0] != "application/json":
+                if not 0 < length <= 64000 or self.headers.get("Content-Type", "").split(";")[0] != "application/json":
                     raise ValueError("a bounded JSON request is required")
                 data = json.loads(self.rfile.read(length))
                 if not isinstance(data, dict):
@@ -184,6 +188,25 @@ def make_server(port=8787, root="data/workbench", config=None):
                 if self.path == "/api/connection/test":
                     return self.send(app.probe(data))
                 path = self.path.strip("/").split("/")
+                if len(path) == 4 and path[:2] == ["api", "runs"] and path[3] == "preference":
+                    state = app.snapshot(path[2])
+                    if state["status"] != "completed":
+                        raise ValueError("Preference feedback requires a completed research dossier")
+                    choices = {d["direction_id"]: d["title"] for d in state.get("directions", [])}
+                    left, right, choice, reason = (data.get(k) for k in ("left", "right", "choice", "reason"))
+                    if any(not isinstance(x, str) for x in (left, right, choice, reason)):
+                        raise ValueError("Invalid preference fields")
+                    if left == right or left not in choices or right not in choices or choice not in {left, right, "tie", "defer"} or not 1 <= len(reason.strip()) <= 1500:
+                        raise ValueError("Compare two existing directions and supply a reason")
+                    item = {"origin":"researcher_feedback", "left":choices[left], "right":choices[right],
+                            "choice":choices.get(choice, choice), "reason":reason.strip()}
+                    with app.lock:
+                        target = app.store.folder(path[2]) / "preference_feedback.jsonl"
+                        if target.is_symlink() or (target.exists() and target.stat().st_size > 90000):
+                            raise ValueError("Feedback storage limit reached")
+                        with target.open("a", encoding="utf-8") as f:
+                            f.write(json.dumps(item, ensure_ascii=False) + "\n")
+                    return self.send({"status":"recorded", "message":"Preference saved for future runs with the same supplied paper context."})
                 if len(path) == 4 and path[:2] == ["api", "runs"] and path[3] == "cancel":
                     with app.lock:
                         if app.active != path[2]:
