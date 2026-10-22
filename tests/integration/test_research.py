@@ -27,7 +27,7 @@ def test_scripted_research_replay_and_shared_reports(tmp_path):
         text = render_report(result, audience)
         assert result["evidence_hash"] in text and "toy" in text
         assert text.startswith("# SymmetryLab Research Report")
-        assert (tmp_path / "first" / f"report_{audience}_en.md").read_text() == text
+        assert (tmp_path / "first" / f"report_{audience}_en.md").read_text(encoding='utf-8') == text
     replay = run_research([], tmp_path / "replay", mode="replay", source=tmp_path / "first")
     assert replay == result
     assert read_json(tmp_path / "replay/replay.json")["mode"] == "replay"
@@ -76,7 +76,7 @@ def test_token_budget_stops_before_request(tmp_path):
     with pytest.raises(RuntimeError, match="budget"):
         run_research(inputs(), tmp_path / "limited", "live", {"max_total_tokens": 1}, client)
     assert not client.requests
-    assert '"FAILED"' in (tmp_path / "limited/trace.jsonl").read_text()
+    assert '"FAILED"' in (tmp_path / "limited/trace.jsonl").read_text(encoding='utf-8')
 
 
 def test_invalid_model_predicate_does_not_execute(tmp_path):

@@ -37,7 +37,7 @@ def recall_lessons(root, track, mode, limit=4, goal=None, material=''):
         if path.is_symlink() or path.parent.is_symlink() or path.stat().st_size>2_000_000:
             continue
         try:
-            state=json.loads(path.read_text())
+            state=json.loads(path.read_text(encoding='utf-8'))
             if state.get('research_profile',{}).get('track')!=track or state.get('mode')!=mode:
                 continue
             if not related(goal, material, state):
@@ -84,13 +84,13 @@ def recall_preferences(root, profile, limit=4):
         try:
             result_path=path.parent/'result.json'
             if result_path.is_symlink() or result_path.stat().st_size>2_000_000: continue
-            state=json.loads(result_path.read_text())
+            state=json.loads(result_path.read_text(encoding='utf-8'))
             previous=state.get('research_profile',{})
             if previous.get('track')!=profile['track'] or previous.get('papers','')!=profile['papers']:
                 continue
             if not profile['papers'] and previous.get('keywords','') != profile.get('keywords',''):
                 continue
-            for line in reversed(path.read_text().splitlines()):
+            for line in reversed(path.read_text(encoding='utf-8').splitlines()):
                 item=json.loads(line)
                 if item.get('origin')!='researcher_feedback': continue
                 output.append(dict(item,source_run=path.parent.name))

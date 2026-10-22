@@ -55,7 +55,7 @@ Manual workflow dispatch can include PhysBERT dependencies. Lite builds retain e
 model connection, local UI and lexical paper ranking; PhysBERT requires a full build.
 Packages contain only code, interface assets and dependencies. They exclude API keys, local
 settings, paper history and research records. Configure Connection after first launch.
-Windows user data lives in `%APPDATA%\SymmetryLab`.
+Windows user data lives in `%APPDATA%\SymmetryLab`. Its saved key is plaintext protected by the account folder's inherited Windows permissions; POSIX mode 0600 applies only on Unix-like systems.
 
 The workflow runs regression checks and launches each frozen executable with an isolated
 `--smoke-test` directory. This checks packaged UI resources and completes an offline MnPt

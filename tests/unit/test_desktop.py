@@ -7,7 +7,7 @@ def test_data_dir_override_and_platform_default(monkeypatch, tmp_path):
     assert desktop.data_dir() == tmp_path / "home"
     monkeypatch.delenv("SYMMETRYLAB_HOME")
     monkeypatch.setattr(desktop.sys, "platform", "darwin")
-    assert str(desktop.data_dir()).endswith("Library/Application Support/SymmetryLab")
+    assert desktop.data_dir().parts[-3:] == ("Library", "Application Support", "SymmetryLab")
 
 
 def test_bridge_opens_only_web_links(monkeypatch):

@@ -121,7 +121,9 @@ def test_connection_store_saves_key_privately_and_never_exposes_it(tmp_path, mon
     view = store.save({"base_url": "https://api.example.test/v1", "model": "m1", "protocol": "responses", "api_key": "sk-test-1234567890abcd"})
     assert view == {"base_url": "https://api.example.test/v1", "model": "m1", "protocol": "responses", "key_saved": True,
                     "key_hint": "abcd", "key_source": "saved", "ready": True}
-    assert stat.S_IMODE(os.stat(tmp_path / "connection.json").st_mode) == 0o600
+    # Windows uses inherited NTFS ACLs; POSIX mode bits do not encode those rights.
+    if os.name != "nt":
+        assert stat.S_IMODE(os.stat(tmp_path / "connection.json").st_mode) == 0o600
     assert "sk-test" not in json.dumps(view)
     # An empty key field keeps the saved key; other fields update.
     store.save({"base_url": "https://api.example.test/v1", "model": "m2", "protocol": "responses"})
