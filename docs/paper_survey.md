@@ -28,7 +28,7 @@ Bond results enter the existing local embeddings, ranking, feedback and writing-
 
 Scope: this integration adds a source to **Paper survey**. It does not add Bond to the Theory/Experiment agent's separate `search_source` tool, implement OAuth login/token refresh, fetch full texts, or automatically verify scientific claims. Sharing survey interests with research runs remains a separate opt-in.
 
-Validation uses synthetic MCP responses and local HTTP API tests. The unauthenticated endpoint was reachable and rejected a request without an Authorization header. Authenticated `list_sources`, actual search schemas/results, coverage beyond arXiv, and account quota behavior still require a user token and live validation. The adapter deliberately reports incompatible schemas instead of assuming that an empty result means the query succeeded. This feature is available in the latest source; the previously published v0.3.1 binaries do not contain it.
+Validation uses synthetic MCP responses and local HTTP API tests. The unauthenticated endpoint was reachable and rejected a request without an Authorization header. Authenticated `list_sources`, actual search schemas/results, coverage beyond arXiv, and account quota behavior still require a user token and live validation. The adapter deliberately reports incompatible schemas instead of assuming that an empty result means the query succeeded. This feature is included in v0.3.2 source and desktop packages; the previously published v0.3.1 binaries do not contain it.
 
 The candidate pool aims for 200 entries. Content-voted and writing-selected papers are retained even if protected entries exceed that cap. Title and abstract text is clipped to 2,000 characters for embeddings.
 

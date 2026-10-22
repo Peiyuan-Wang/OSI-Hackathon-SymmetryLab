@@ -15,6 +15,7 @@ with tempfile.TemporaryDirectory(prefix='symmetrylab-package-') as folder:
     subprocess.run([sys.argv[1], '--smoke-test', str(result)], env=env, check=True, timeout=180)
     report = json.loads(result.read_text())
     assert report['status'] == 'passed' and report['calculations'] > 0 and report['designs'] > 0
+    assert report['bond']['adapter_imported'] and report['bond']['ui_available']
     if '--require-ssg' in sys.argv[2:]:
         assert report['ssg']['bundled'] and report['ssg']['verification'] == 'verified'
     print(json.dumps(report))

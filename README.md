@@ -6,15 +6,15 @@
 
 SymmetryLab supports two research workflows: experimental goals for a named material, and theory exploration guided by selected papers and interests. Exact tools check bounded models; source-linked interpretations, research taste, material assignments and experimental proposals retain their own verification status.
 
-The **v0.3.1 preview** preserves the original theory layout and adds a matching experimental workspace for **L10 MnPt Neel-axis detection**. It includes public metadata retrieval, conditional orientation calculations, counterexample search, paper-linked taste profiles, human preference feedback and rechecked cross-run strategies. Live model research requires a configured provider. Offline walkthroughs use scripted decisions.
+The **v0.3.2 preview** preserves the original theory layout and adds a matching experimental workspace for **L10 MnPt Neel-axis detection**. It includes public metadata retrieval, conditional orientation calculations, counterexample search, paper-linked taste profiles, human preference feedback and rechecked cross-run strategies. Live model research requires a configured provider. Offline walkthroughs use scripted decisions.
 
-**Latest source update:** Paper survey now supports [Valency MCP Bond](https://www.valency.io/bond/) alongside arXiv, with combined retrieval, source attribution and identifier-based deduplication. See [Bond setup](#use-valency-mcp-bond). This integration is not included in the published v0.3.1 desktop packages; run the latest source or build a new package locally.
+**New in v0.3.2:** Paper survey now supports [Valency MCP Bond](https://www.valency.io/bond/) alongside arXiv, with combined retrieval, source attribution and identifier-based deduplication. See [Bond setup](#use-valency-mcp-bond). The v0.3.2 desktop packages include this integration; older v0.3.1 packages do not.
 
 Read [the discovery benchmark and RSI design](docs/design/discovery_benchmark_rsi.md) for scientific definitions, source boundaries, the benchmark collection plan, controlled experiments and remaining work. This is a research prototype; sample-specific magnetic structure, growth feasibility, quantitative experimental signals and novel discoveries are not established.
 
 ## Desktop app (Windows and macOS)
 
-Download the matching ZIP from **GitHub Actions → Desktop packages**. On Windows, extract the whole folder and double-click `SymmetryLab.exe`; on Apple Silicon Mac, extract and open `SymmetryLab.app`. Default packages omit the optional PhysBERT runtime. See [Desktop app](docs/desktop_app.md) for requirements and full builds.
+Download the matching ZIP from the [latest GitHub Release](https://github.com/Peiyuan-Wang/OSI-Hackathon-SymmetryLab/releases/latest). On Windows, extract the whole folder and double-click `SymmetryLab.exe`; on Apple Silicon Mac, extract and open `SymmetryLab.app`. Default packages omit the optional PhysBERT runtime. See [Desktop app](docs/desktop_app.md) for requirements and full builds.
 
 Build locally on macOS:
 

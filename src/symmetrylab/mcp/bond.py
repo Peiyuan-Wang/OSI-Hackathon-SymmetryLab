@@ -97,7 +97,7 @@ class BondMCP:
         if self.version:
             return
         result = self.rpc('initialize', {'protocolVersion': '2025-11-25', 'capabilities': {},
-                                        'clientInfo': {'name': 'SymmetryLab', 'version': '0.3.1'}})
+                                        'clientInfo': {'name': 'SymmetryLab', 'version': '0.3.2'}})
         version = result.get('protocolVersion')
         if version not in VERSIONS:
             raise BondError('Bond selected an unsupported MCP protocol version.')

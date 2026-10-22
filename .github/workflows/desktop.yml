@@ -93,4 +93,6 @@ jobs:
             Windows: extract the ZIP and double-click `SymmetryLab.exe` (WebView2 Runtime required).
             macOS: extract the ZIP and open `SymmetryLab.app` (Apple Silicon; unsigned, so first launch may require right-click → Open).
             Each ZIP has a companion SHA-256 file. Optional PhysBERT is not included in these lite builds.
+            Valency Bond MCP: open Paper survey → Literature sources, choose arXiv + Valency Bond, paste a bearer token from https://app.valency.io/settings, click Test Bond connection, then Find papers.
+            Tokens stay in the current app session. Authenticated Bond search has not yet been validated with a live account; synthetic protocol tests and packaged-module/UI smoke checks are included.
           files: release-assets/*

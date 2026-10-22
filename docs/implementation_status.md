@@ -1,15 +1,15 @@
 # Implementation Status
 
-Current version: **0.3.1 discovery preview**, 2026-10-23 (Asia/Shanghai). Release builds are produced by the `v*` tag workflow after both platform packages pass their SSG-required smoke checks.
+Current version: **0.3.2 discovery preview**, 2026-10-23 (Asia/Shanghai). Release builds are produced by the `v*` tag workflow after both platform packages pass their SSG-required smoke checks.
 
 ## Implemented in this revision
 
-### Unreleased: optional Valency Bond source (2026-10-23)
+### v0.3.2: optional Valency Bond source (2026-10-23)
 
 - Paper survey now supports arXiv, Bond, or both, with session-only bearer tokens, an authenticated `list_sources` connection test, runtime search-tool discovery, source attribution, ID/DOI deduplication and visible partial failures. Existing ranking and feedback are reused. No new runtime dependency is required.
 - MCP protocol/adapter and local HTTP API regression tests use synthetic fixtures. Live authenticated search and its actual schemas have **not** been verified without a user token. Physics-only filtering excludes missing/unrecognized category metadata. See [setup and limitations](paper_survey.md#optional-valency-bond-mcp).
 - Local validation: **149 passed, 1 skipped**; Python compilation, JavaScript syntax checking and `git diff --check` passed. The skipped test requires the optional PhysBERT dependencies/model.
-- This change has not been packaged or released; published v0.3.1 assets are unchanged. Theory/Experiment agent source tools and OAuth login are outside this change.
+- The v0.3.2 release workflow packages this integration on Windows and macOS; v0.3.1 assets remain unchanged. Theory/Experiment agent source tools and OAuth login are outside this change.
 
 | Area | Current behavior |
 |---|---|

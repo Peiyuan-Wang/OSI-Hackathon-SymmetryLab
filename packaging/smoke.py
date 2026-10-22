@@ -12,6 +12,18 @@ def check(server, root, destination):
         with opener.open(base + route, timeout=10) as response:
             if response.status != 200 or not response.read():
                 raise RuntimeError('Frozen resource unavailable: ' + route)
+    from symmetrylab.literature.bond import BondClient, normalize
+    from symmetrylab.mcp.bond import ENDPOINT
+    assert BondClient and ENDPOINT == 'https://mcp.valency.io/'
+    assert normalize({'title': 'Synthetic physics fixture', 'doi': '10.1000/smoke'})['id'] == 'doi:10.1000/smoke'
+    with opener.open(base + '/papers', timeout=10) as response:
+        assert b'id="bond-token"' in response.read()
+    with opener.open(base + '/papers.js', timeout=10) as response:
+        assert b'/api/literature/bond-test' in response.read()
+    with opener.open(base + '/api/literature', timeout=10) as response:
+        survey = json.load(response)
+        assert survey['search_sources'] == ['arxiv'] and 'token_source' in survey['bond']
+    bond = {'adapter_imported': True, 'ui_available': True, 'authenticated_search_tested': False}
     result = run_agent('Determine the MnPt Neel axis', Path(root) / 'smoke-run',
                        config={'research_profile': {'track': 'experiment', 'material': 'L10 MnPt', 'reuse_lessons': False}})
     if result['status'] != 'completed' or not all(c['certificate_verified'] for c in result['calculations']):
@@ -28,4 +40,5 @@ def check(server, root, destination):
         ssg['verification'] = registry.call_skill('ssg-database', 'verify_group', {'record_id': 'N143.10.1'})['status']
         assert ssg['record_count'] == 67475 and ssg['verification'] == 'verified'
     Path(destination).write_text(json.dumps({'status': 'passed', 'calculations': len(result['calculations']),
-                                            'designs': len(result['experiment_designs']), 'ssg': ssg}), encoding='utf-8')
+                                            'designs': len(result['experiment_designs']), 'ssg': ssg,
+                                            'bond': bond}), encoding='utf-8')

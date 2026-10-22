@@ -52,6 +52,6 @@ coll = COLLECT(exe, a.binaries, a.datas, name='SymmetryLab')
 if sys.platform == 'darwin':
     app = BUNDLE(coll, name='SymmetryLab.app', icon=os.path.join(SPECPATH, 'icon.png'), bundle_identifier='local.symmetrylab.workbench',
                  info_plist={'CFBundleName': 'SymmetryLab', 'CFBundleDisplayName': 'SymmetryLab',
-                             'CFBundleShortVersionString': '0.3.1', 'CFBundleVersion': '0.3.1',
+                             'CFBundleShortVersionString': '0.3.2', 'CFBundleVersion': '0.3.2',
                              'NSHighResolutionCapable': True, 'LSMinimumSystemVersion': '11.0',
                              'NSAppTransportSecurity': {'NSAllowsLocalNetworking': True}})

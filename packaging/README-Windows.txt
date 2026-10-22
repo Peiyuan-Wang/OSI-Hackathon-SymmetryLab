@@ -9,4 +9,8 @@ Use Offline demonstration first. Configure your own API service on Connection fo
 Data and saved settings are stored in %APPDATA%\SymmetryLab, not inside the program folder.
 The build does not contain anyone's API key, papers or research history.
 Default builds omit PyTorch/PhysBERT; the paper survey uses the offline lexicon.
+Valency Bond MCP is available in Paper survey > Literature sources. Get a bearer token
+from https://app.valency.io/settings, select arXiv + Valency Bond, paste the token,
+click Test Bond connection, then Find papers. The token stays in memory until exit.
+Live authenticated Bond search still requires validation with your account.
 This preview is unsigned. Only run packages from a source you trust.
